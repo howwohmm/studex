@@ -5,43 +5,42 @@
 
 ## Who's Building This
 
-**Om (Founder)**
-I'm the one who lived this problem, formulated the idea, tried building an MVP once, shelved it, and am now bringing it back seriously. I've experienced every pain point Studex solves — not once, but every day for the past however many semesters. That's where the conviction comes from.
+**Om Mishra (Founder)**
+CS student at Ramaiah University, Bengaluru. Recognised the problem firsthand, built and shelved v1, reviving now with more technical depth. Vibe codes every day — capsule.ohm.quest shipped last week, Refresh chrome extension (live on GitHub), MindOS deployed on Fly.io with 180 videos processed, 15+ projects shipped. Udyam registered. Applying to a16z Speedrun, Z Fellows, Eigenprize.
 
-I'm currently looking for one strong technical co-founder to build this with. The product is designed, the problem is validated well enough to move, and the first users are already identified. What I need is someone who can build fast and cares about getting this right.
+The conviction comes from living this problem every semester. Not from a gap analysis.
 
-**Dhvani (UI)**
-Dhvani is a friend who can help with UI design. She's not a full-time co-founder yet — she's a potential early contributor who understands the problem firsthand (she's one of the original ten people who confirmed it was real).
+**Technical co-founder seat — open.**
+This is the single most critical unlock. The MVP is estimated at ~1 week with AI-assisted tools, but a committed technical co-founder changes the build speed entirely. Looking for someone who builds fast and cares about getting this right.
 
-**Prajval and Mruja (Potential)**
-Two people in the orbit who could contribute on the technical side. Their exact roles aren't defined yet. They're being pulled in as the project gets more real — which is how early teams actually form.
+---
+
+## The Network
+
+Om learns from and gets help from some of the most opinionated technical founders in Bengaluru: Saurabh Garg (C4E), Heet Tike, Ankit Sharma, the Blulearn gang. Not formal advisors — real people who give real feedback.
 
 ---
 
 ## Why This Team For This Problem
 
-The honest answer: we're students building for students.
+The honest answer: a student building for students.
 
-There's no gap between the builder and the built-for. The frustration that drives the product is the same frustration Om wakes up with every morning. The users we're building for are the people in our contacts. The first college we're targeting is our college.
+There's no gap between the builder and the built-for. The frustration that drives the product is the same frustration Om wakes up with every morning. The users being built for are in his contacts. The first college being targeted is his college.
 
-This sounds like a limitation. It's actually the most defensible position a pre-product startup can be in. We don't need user research sessions because we are the users. We don't need to guess what's broken because we're living with what's broken right now.
+This sounds like a limitation. It's actually the most defensible position a pre-product startup can be in. No need for user research sessions because he is the user. No need to guess what's broken because he's living with what's broken right now.
 
 ---
 
 ## What's Still Missing
 
-Being honest about this:
+One committed technical co-founder. Someone who can build the iOS/Android app, cares about the product, and is in this for the right reasons.
 
-We need one committed technical co-founder. Someone who can build the mobile app, cares about the product, and is in this for the right reasons — not just to have a startup on their CV.
-
-The rest of the team will form around a working product and real users. That's the right order. Hire for what you need when you actually need it, not to fill a slide.
+The rest of the team will form around a working product and real users. That's the right order.
 
 ---
 
-## The Stage We're At
+## The Stage
 
-This is a pre-formation startup. The founder has lived the problem for years, has named and mapped it precisely, has early social proof (ten real people who confirmed it and want it), and has a clear MVP plan.
+Pre-launch. The founder has lived the problem for years, mapped it precisely, has 10 named early users who confirmed it and want it, and has a clear MVP plan. Pitch deck built. Fundraising applications in progress.
 
-What comes next is: build the MVP, put it in front of those ten people, and find out what's true.
-
-Everything in these documents — the market sizing, the GTM, the business model — is the current best thinking. It will change. What won't change is the problem, because the problem is real and isn't going anywhere.
+What comes next: build the MVP, put it in front of those ten people, find out what's true.
