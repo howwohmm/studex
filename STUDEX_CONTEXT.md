@@ -8,41 +8,56 @@
 **Studex** is a mobile app for Indian college students that answers one question every morning: *what do I have today?*
 
 Three core features:
-- **Today View** — today's class schedule, clean and instant
-- **Subject Folders** — files organized by subject, never lost in WhatsApp again
-- **Bunk Tracker** — real-time attendance % tracked against the 75% college rule
+- **Today View** — today's class schedule, clean and instant. Timetable extracted from photo/PDF via claude.
+- **Subject Folders** — files organized by subject, never lost in WhatsApp again. AI organizes on dump.
+- **Bunk Tracker** — real-time attendance % tracked against the 75% college rule. Full semester predictions.
 
-Student-first. Works without college cooperation. Free core, Pro tier at ₹49–99/month.
+Claude is the backbone — not a feature on top. Student-first. Works without college cooperation.
+
+Free core always. Pro tier at ₹250/month (~$3).
 
 ---
 
 ## Who's Building It
 
-**Om** — founder, current college student in India, lived this problem every day, driving the product and vision. Looking for a technical co-founder.
+**Om Mishra** — founder, CS student at Ramaiah University, Bengaluru. Lived this problem every day. Built and shelved v1. Reviving with more technical depth. Vibe codes daily — 15+ projects shipped. Udyam registered.
 
-**Dhvani** — UI contributor, early team.
+**Technical co-founder seat** — open. Single most critical unlock.
 
-**Prajval + Mruja** — potential technical contributors, not fully committed yet.
+Learns from: Saurabh Garg (C4E), Heet Tike, Ankit Sharma, the Blulearn gang.
 
 ---
 
 ## Current Stage
 
-- Product is on paper. No code yet.
-- MVP target: 1 week using AI-assisted build tools.
-- First users: 10 confirmed friends (Mruja, Dhvani, Prajval, Sumi, Pranita, Vishal, Srishti, Shraddha, Sumit, Puskar).
-- Beachhead: Om's own college, CR-first rollout.
+- Product documented. Pitch deck built.
+- MVP target: ~1 week using AI-assisted build tools.
+- First users: 10 confirmed (Mruja, Dhvani, Prajval, Sumi, Pranita, Vishal, Srishti, Shraddha, Sumit, Puskar).
+- Beachhead: Ramaiah University, Bengaluru — CR-first rollout.
 - Revenue: pre-revenue, pre-launch.
+- Applications filed: a16z Speedrun, Z Fellows, Eigenprize. Udyam registered.
 
 ---
 
-## Tech Stack Preferences
+## Tech Stack
 
-- **Mobile-first.** Primary platform is Android. Most Indian college students are on Android.
-- **React Native or Flutter** preferred for cross-platform mobile.
-- **Supabase** for backend/auth/database (fast to set up, scales fine for MVP).
-- **Lovable / Bolt / v0** for rapid UI prototyping.
-- Keep it simple. This is a daily utility app, not a complex system. Speed of build matters more than architectural elegance right now.
+- **iOS MVP**: SwiftUI + Core Data + Xcode.
+- **AI**: Claude API for timetable extraction, onboarding chat, attendance intelligence, material search.
+- **Backend**: Supabase for auth/database.
+- Keep it simple. Speed of build matters more than architectural elegance right now.
+
+---
+
+## The AI Layer (Important)
+
+Claude runs underneath every core flow:
+
+1. **Timetable extraction** — student uploads photo or PDF → claude extracts subjects, timings, classrooms, days → asks follow-ups for shorthand → student confirms → dashboard live.
+2. **Conversational onboarding** — profile setup via chat interface, not a form.
+3. **Attendance intelligence** — bunk predictions, semester-end projections, "can I skip tomorrow."
+4. **AI mode** — chat interface for anything: schedule, materials, attendance queries.
+5. **Pro: AI material search** — RAG pipeline over uploaded subject PDFs.
+6. **Pro: Lecture digests** — PDF/notes → focused study card with spaced repetition (day 3, 7, 30).
 
 ---
 
@@ -50,7 +65,7 @@ Student-first. Works without college cooperation. Free core, Pro tier at ₹49�
 
 1. **Less chaotic** — every feature passes one test: does this make the student's day less chaotic?
 2. **Useful on day one** — no empty states, no "invite friends to get started," valuable alone immediately.
-3. **Student-first** — the college doesn't need to cooperate. The student is the user and the customer.
+3. **Student-first** — the college doesn't need to cooperate.
 4. **No feature creep** — MVP has exactly three features. Nothing else until those three are daily habits.
 
 ---
@@ -58,37 +73,46 @@ Student-first. Works without college cooperation. Free core, Pro tier at ₹49�
 ## What the MVP Needs to Do
 
 A student can:
-1. Sign up with student email
-2. Set up their timetable (manual input for MVP)
-3. See today's classes on the home screen
-4. Upload and organize files by subject
-5. Log attendance and see their live percentage
+1. Sign up with any email
+2. Go through AI chat onboarding (profile setup)
+3. Upload timetable photo/PDF → claude extracts → confirm → dashboard live
+4. See today's classes on home screen
+5. Upload and organize files by subject
+6. Log attendance and see live percentage with predictions
 
 That's it. Anything beyond this is Phase 2.
 
 ---
 
-## Tone & Communication Style
+## The One Metric That Matters
 
-- Direct. No fluff.
-- Honest about stage — we're pre-launch, figuring out if this is real.
-- Think like a founder, not a consultant.
-- When discussing product: think in terms of daily habits and user behavior, not features.
-- When discussing business: the goal right now is ramen profitability, not a big raise.
+**Do students open this app every day without being reminded?**
+
+Kill signal: fewer than 5 of 10 original users opening daily after 4 weeks = rebuild or stop.
 
 ---
 
 ## What Not to Do
 
-- Don't suggest enterprise features, admin dashboards, or institution-facing tools right now.
+- Don't suggest manual timetable input — the AI extraction IS the onboarding.
+- Don't suggest enterprise features or admin dashboards right now.
 - Don't suggest paid acquisition or big launch strategies.
-- Don't over-engineer the backend. This is a week-one MVP.
+- Don't over-engineer the backend.
 - Don't add social features until the core utility is proven.
+- Don't change the pricing — it's ₹250/month, not ₹49-99.
 
 ---
 
-## The One Question That Matters Right Now
+## What's Next (Vision)
 
-**Do students open this app every day without being reminded?**
+**WhatsApp agent** — connects to class groups. Claude reads every message, extracts files, flags exam dates, sets reminders. Student gets a morning digest. Never opens WhatsApp for academics again.
 
-Everything we build, every decision we make, is in service of answering that question with a yes.
+**Attendance prediction** — proactive nudges based on your pattern, weather, current %.
+
+**Exam crunch mode** — UI switches 2 weeks before exams. Surfaces unread PDFs, builds revision plan.
+
+**CR tools** — dashboard for Class Reps to share files and announcements directly into studex.
+
+**Peer notes network** — upload notes, claude structures them, searchable by whole batch.
+
+**2-year vision:** Studex becomes the communication layer for the batch. WhatsApp stays for personal life.
