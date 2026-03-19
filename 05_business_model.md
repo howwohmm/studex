@@ -7,67 +7,80 @@
 
 Pre-revenue. Pre-launch. Zero paying users.
 
-This is stated plainly because the model is built on earning the habit first, then asking for the subscription. Faking revenue at this stage would be dishonest and pointless — anyone worth impressing can tell.
+The model is built on earning the habit first, then asking for the subscription.
 
 ---
 
 ## The Model
 
 **Free — always.**
-Schedule, files, attendance tracker. The core daily utility is free forever. Students with no income shouldn't be gatekept from a tool that solves a genuine daily problem. And practically: a free core is what gets us the density and daily habit that makes everything else possible.
+Schedule, folders, attendance tracker. The core daily utility is free forever. Students with no income shouldn't be gatekept from a tool that solves a genuine daily problem. And practically: a free core is what gets the density and daily habit that makes everything else possible.
 
-**Pro — ₹49–99/month.**
-Advanced features for students who want more:
-- Better file organization (tags, search filters, bulk upload)
-- Exam prep layer (syllabus tracker, past paper library, study reminders)
-- Priority notifications and announcement pinning
+**Pro — ₹250/month (~$3).**
+AI-powered features for students who want more:
+- AI material search across all uploaded PDFs
+- Lecture digests with spaced repetition (day 3, 7, 30)
+- Smart bunk predictor — full semester predictions
+- Deadline alerts + submission reminders
 
-The pricing is in the same range as Spotify India. Students already pay this for things they use daily. The question is whether Studex earns that level of daily use. If it does, conversion follows.
+The pricing is in line with PhysicsWallah's online ARPU (₹306/month equivalent) — an already-proven psychological threshold for Indian students. 40% of Indian digital users maintain 3-4 active subscriptions simultaneously. The "students won't pay" argument is dead.
 
-Industry standard freemium conversion in India: 2–5%. We're not assuming more than that.
+Industry standard freemium conversion in India: 2–3%. Not assuming more.
 
 **Institutional — ₹100–500/student/year (Phase 2).**
-Colleges that want to plug in officially — push announcements, share schedules, access anonymized engagement data — can pay for an institutional seat. This is not the current strategy. It's the natural extension once student adoption is real.
+Colleges that want to plug in officially can pay for an institutional seat. Not the current strategy. The natural extension once student adoption is real.
 
 ---
 
 ## What the Numbers Look Like
 
-At 1,000 Pro users, ₹49/month: ₹49,000 MRR. Covers server costs and basic team expenses.
-At 2,000 Pro users, ₹49/month: ₹98,000 MRR. The team is fed.
-At 15,000 DAU, 3% Pro conversion, ₹49/month: ₹22,000 MRR.
-At 15,000 DAU, 3% Pro conversion, ₹99/month: ₹44,500 MRR.
+At 1,000 Pro users × ₹250/month = ₹2.5L MRR. That's milestone 1.
+At 2,000 Pro users × ₹250/month = ₹5L MRR. The team is properly funded.
 
-These are not impressive numbers. They are real numbers. A company at ₹1 lakh MRR is alive, learning, and not dependent on anyone else. That's the first meaningful milestone — not a big fundraise, not a big launch, just: the product makes enough money to keep going.
+These are not impressive numbers. They are real numbers. A company at ₹2.5L MRR is alive, learning, and not dependent on anyone else.
+
+---
+
+## Why ₹250 Works
+
+- PhysicsWallah online ARPU: ₹3,682/year = ₹306/month. Studex is inside that threshold.
+- Willingness to pay for digital utility in emerging markets: ~$2.40–3.00/month (cross-market studies).
+- Urban college student discretionary wallet: ₹4,000–5,000/month. ₹250 is 5–6% of that — utility-level spend, not a luxury.
+- Positioned as "student rate" — Gen Z 90% more likely to purchase with exclusive student pricing.
 
 ---
 
 ## What We Need Right Now
 
-Three things. Nothing more.
+**Claude API credits** — primary ask. Studex is a claude-heavy build. Timetable extraction, conversational onboarding, attendance intelligence, AI material search — all of it runs on claude. None of this works on a free tier. Credits = ability to actually test with real users.
 
-**Build time.** The founders need runway to focus on this without taking on other work. ₹2–4 lakh covers 6 months of minimal living expenses.
+**Everything else is bootstrapped** — hosting, design tools, dev stack. ~$150/year out of pocket. That stays.
 
-**Infrastructure.** Hosting, backend, database, basic tooling for a mobile app. ₹50,000–1 lakh for 12 months.
+**If seeking seed/grant:**
+- ₹2–4L founder runway (6 months)
+- ₹50K–1L infra + hosting + claude API costs during beta
+- ₹25–50K device testing (Android fragmentation is real)
+- Total: ₹3–5L
 
-**Device testing.** Indian students use a wide range of Android devices. Covering the test surface costs real time and some money. ₹25,000–50,000.
+---
 
-**Total ask at this stage: ₹3–5 lakh.**
+## Non-Dilutive Pipeline
 
-This is a small ask. It's the right ask. A startup that can't figure out what it's building with ₹5 lakh won't figure it out with ₹50 lakh.
+Udyam registered. DPIIT recognition in progress.
+- SISFS (DPIIT): up to ₹20L for product dev
+- SAMRIDH (MeitY): up to ₹40L for MVP-stage scaling
+- Combined non-dilutive available: ₹60L
+
+Applications filed: a16z Speedrun, Z Fellows, Eigenprize.
+In queue: 100X.VC, NASSCOM 10K, College E-cell.
 
 ---
 
 ## The Path From Here
 
-Ramen profitability is the first real milestone. Not a big funding round. Not institutional deals. Just: the product makes enough each month that the founders can keep going without depending on outside money.
-
-At ₹1 lakh MRR we're there. Everything after that is growth, not survival.
-
-**Sequence:**
 1. Build MVP (1 week)
 2. 10 daily active users (Month 1)
 3. 100 daily active users, one college (Month 2–3)
 4. First Pro conversions (Month 3–4)
-5. Ramen profitability (Month 12–18)
+5. Ramen profitability at ₹2.5L MRR (Month 12–18)
 6. Expand to second college (when beachhead works, not before)
