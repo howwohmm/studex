@@ -14,11 +14,11 @@ export default [
     ],
   },
   // Expo app lint rules (react-native + import + core web) apply to the app tree.
-  ...expoConfig.map((cfg) => ({ files: ['apps/app/**/*.{js,jsx,ts,tsx}'], ...cfg })),
+  ...expoConfig.map((cfg) => ({ ...cfg, files: ['apps/app/**/*.{js,jsx,ts,tsx}'] })),
   // typescript-eslint recommended for pure-TypeScript packages.
   ...tseslint.configs.recommended.map((cfg) => ({
-    files: ['packages/**/*.{ts,tsx}'],
     ...cfg,
+    files: ['packages/**/*.{ts,tsx}'],
   })),
   {
     files: ['apps/app/**/*.{ts,tsx,js,jsx}'],

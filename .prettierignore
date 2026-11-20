@@ -6,3 +6,4 @@ pnpm-lock.yaml
 **/.expo
 **/*.html
 extraction-lab
+apps/app/assets/expo.icon
