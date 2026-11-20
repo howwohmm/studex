@@ -20,6 +20,7 @@ const ICON_MAP = {
   calendar: { sf: 'calendar', ion: 'calendar-outline' },
   leaf: { sf: 'leaf', ion: 'leaf-outline' },
   plus: { sf: 'plus', ion: 'add' },
+  more: { sf: 'ellipsis', ion: 'ellipsis-horizontal' },
   person: { sf: 'person.crop.circle', ion: 'person-circle-outline' },
 } as const;
 

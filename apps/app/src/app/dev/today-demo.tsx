@@ -60,10 +60,10 @@ const INITIAL: Slot[] = [
 const CLOCKS = [570, 750, 1050] as const; // Morning 9:30 · Midday 12:30 · Evening 17:30
 
 type Action =
-  | { type: 'mark'; id: string; state: 'attended' | 'bunked' }
+  | { type: 'mark'; id: string; state: 'attended' | 'bunked' | 'cancelled' }
   | { type: 'reopen'; id: string }
   | { type: 'undo' }
-  | { type: 'sweep' };
+  | { type: 'sweep'; clock: number };
 
 function reducer(slots: Slot[], action: Action): Slot[] {
   switch (action.type) {
@@ -81,7 +81,9 @@ function reducer(slots: Slot[], action: Action): Slot[] {
       });
     case 'sweep':
       return slots.map((s) =>
-        s.state === 'unmarked' ? { ...s, prev: s.state, state: 'attended' } : s,
+        s.state === 'unmarked' && s.start <= action.clock
+          ? { ...s, prev: s.state, state: 'attended' }
+          : s,
       );
   }
 }
@@ -178,7 +180,7 @@ export default function TodayDemo() {
     wasEligible.current = eligible;
   }, [eligible]);
 
-  function mark(slot: Slot, state: 'attended' | 'bunked') {
+  function mark(slot: Slot, state: 'attended' | 'bunked' | 'cancelled') {
     haptic('mark');
     dispatch({ type: 'mark', id: slot.id, state });
     setUndoVisible(true);
@@ -187,7 +189,7 @@ export default function TodayDemo() {
   const now = slots.filter((s) => s.start <= clock && clock < s.end);
   const upcoming = slots.filter((s) => clock < s.start);
   const earlier = slots.filter((s) => s.end <= clock);
-  const remaining = slots.filter((s) => s.state === 'unmarked').length;
+  const remaining = slots.filter((s) => s.state === 'unmarked' && s.start <= clock).length;
   const dateLabel = new Intl.DateTimeFormat('en-IN', {
     weekday: 'short',
     day: 'numeric',
@@ -276,7 +278,7 @@ export default function TodayDemo() {
             title={t('today.sweep', { n: remaining })}
             onPress={() => {
               haptic('endOfDaySweep');
-              dispatch({ type: 'sweep' });
+              dispatch({ type: 'sweep', clock });
               setUndoVisible(true);
             }}
           />
@@ -344,12 +346,14 @@ function ClassRow({
   clock: number;
   isNow?: boolean;
   past?: boolean;
-  onMark: (s: Slot, m: 'attended' | 'bunked') => void;
+  onMark: (s: Slot, m: 'attended' | 'bunked' | 'cancelled') => void;
   onReopen: (s: Slot) => void;
 }) {
   const theme = useTheme();
   const reduce = useReducedMotion();
   const marked = slot.state !== 'unmarked';
+  const future = slot.start > clock;
+  const [menuOpen, setMenuOpen] = useState(false);
   const flash = useSharedValue(0);
   const [flashKind, setFlashKind] = useState<'attended' | 'bunked' | null>(null);
   const stats = useMemo(() => subjectStats(slot), [slot]);
@@ -374,7 +378,10 @@ function ClassRow({
     slot.state === 'bunked' ? t('today.state.bunked') : t('today.state.cancelled');
 
   return (
-    <View
+    <Pressable
+      accessibilityLabel={future && !marked ? `${slot.subject.name} options` : undefined}
+      onLongPress={future && !marked ? () => setMenuOpen(true) : undefined}
+      delayLongPress={400}
       style={[
         {
           flexDirection: 'row', alignItems: 'center', gap: spacing[12],
@@ -382,6 +389,7 @@ function ClassRow({
           borderBottomWidth: 1, borderBottomColor: theme.separator,
         },
         isNow ? { backgroundColor: theme.accentSoft } : null,
+        menuOpen ? { zIndex: 20 } : null,
       ]}>
       {/* time column */}
       <View style={{ width: 56 }}>
@@ -427,6 +435,29 @@ function ClassRow({
             <Text variant="caption1" color="secondary">{pillLabel}</Text>
           </View>
         </Pressable>
+      ) : future ? (
+        <View>
+          <IconButton onPress={() => setMenuOpen((o) => !o)} size={36} accessibilityLabel="Class options">
+            <Icon name="more" size={18} color="secondary" />
+          </IconButton>
+          {menuOpen ? (
+            <View
+              style={{
+                position: 'absolute', top: 40, right: 0, zIndex: 10,
+                backgroundColor: theme.bg.elevated, borderRadius: radii.md,
+                borderCurve: 'continuous' as never, borderWidth: 1, borderColor: theme.separator,
+                shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 24, shadowOffset: { width: 0, height: 8 },
+                elevation: 6, minWidth: 140,
+              }}>
+              <Pressable
+                accessibilityRole="menuitem"
+                style={{ paddingVertical: 12, paddingHorizontal: 16, minHeight: 44, justifyContent: 'center' }}
+                onPress={() => { setMenuOpen(false); onMark(slot, 'cancelled'); }}>
+                <Text variant="body">{t('mark.cancelled')}</Text>
+              </Pressable>
+            </View>
+          ) : null}
+        </View>
       ) : (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[8] }}>
           {(['attended', 'bunked'] as const).map((kind) => (
@@ -442,6 +473,6 @@ function ClassRow({
           ))}
         </View>
       )}
-    </View>
+    </Pressable>
   );
 }
