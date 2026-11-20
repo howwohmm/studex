@@ -1,11 +1,7 @@
 import { useEffect } from 'react';
 import { Pressable, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  useReducedMotion,
-} from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { useReducedMotion } from '../reduced-motion';
 import { useTheme } from '../theme';
 import { radii, springs } from '../tokens';
 import { haptic } from '../haptics';

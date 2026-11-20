@@ -5,11 +5,16 @@ import { Platform } from 'react-native';
 // effects (scheme/clock param reads) and entrance animations are done. E2E
 // tests wait on [data-settled="true"] instead of sleeping. The timeout defers
 // past the whole passive-effects flush, so parent layout effects that set
-// browser-derived state have already committed.
+// browser-derived state have already committed. If ready drops again the
+// marker is cleared before a new settle window starts.
 export function useSettled(ready = true): { settledProps: { dataSet?: { settled: 'true' } } } {
   const [settled, setSettled] = useState(false);
   useEffect(() => {
-    if (!ready || settled) return;
+    if (!ready) {
+      if (settled) queueMicrotask(() => setSettled(false));
+      return;
+    }
+    if (settled) return;
     const id = setTimeout(() => setSettled(true), 0);
     return () => clearTimeout(id);
   }, [ready, settled]);

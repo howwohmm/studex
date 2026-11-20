@@ -4,11 +4,12 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  useReducedMotion,
   Easing,
 } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import Head from 'expo-router/head';
+
+import { useReducedMotion } from '@/lib/reduced-motion';
 
 import { useSettled } from '@/lib/settled';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

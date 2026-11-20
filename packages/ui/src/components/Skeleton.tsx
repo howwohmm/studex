@@ -4,9 +4,9 @@ import Animated, {
   useSharedValue,
   withRepeat,
   withTiming,
-  useReducedMotion,
   Easing,
 } from 'react-native-reanimated';
+import { useReducedMotion } from '../reduced-motion';
 import { useTheme } from '../theme';
 import { radii } from '../tokens';
 

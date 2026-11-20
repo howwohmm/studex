@@ -27,7 +27,7 @@ where they conflict, the spec wins. Owner: lead. Implemented in `packages/ui` (P
 | `separator` | rgba(60,60,67,0.18) | rgba(84,84,88,0.65) | Hairlines |
 | `accent` | #4B5CF6 | #8A96FF | Text links, gauge, tints |
 | `accent.solid` / `onAccent` | #4B5CF6 / #FFFFFF | #4B5CF6 / #FFFFFF | Filled buttons (≥ 4.5:1, test-enforced) |
-| `accent.text` | #3D4CE0 | #8A96FF | Accent-colored text on `accent.soft` (badges, chips) — ≥ 4.5:1, test-enforced |
+| `accent.text` | #3D4CE0 | #8A96FF | Accent-colored text on `accent.soft` (badges, tinted buttons) — ≥ 4.5:1, test-enforced |
 | `accent.soft` | rgba(75,92,246,0.12) | rgba(138,150,255,0.18) | Tinted buttons, NOW row |
 | `status.attended` | #1EA446 | #32D74B | Small marks only |
 | `status.bunked` | #E5372B | #FF5A4E | Small marks only |
@@ -106,7 +106,7 @@ Tutor `sparkles`. Marks: `checkmark` · `xmark` · `minus.circle` (cancelled).
   status dot), tap to change. NOW row: `accent.soft` background + "NOW" capsule. Past unmarked:
   dashed hollow circle + "Did you make it?".
 - **Card:** surface, radius lg, padding 20. **Button:** primary filled accent (height 50, radius md,
-  headline white) · tinted (`accent.soft` + accent text) · plain. **Chip**, **Badge**,
+  headline white) · tinted (`accent.soft` + `accent.text`) · plain. **Chip** (`label.secondary` on `fill.control`, status as a small dot), **Badge** (`accent.text` on `accent.soft`, or `label.primary` on an opaque surface when placed on a tinted row),
   **SegmentedControl** (native-feeling), **Toast** (glass), **EmptyState** (56 pt symbol in accent, optically centered,
   title3, body secondary, one primary button), **Skeleton** (soft shimmer).
 

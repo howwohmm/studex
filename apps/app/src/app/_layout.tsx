@@ -1,4 +1,11 @@
-import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider, Stack } from 'expo-router';
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider as NavThemeProvider,
+  Stack,
+  useGlobalSearchParams,
+  usePathname,
+} from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { Platform, useColorScheme } from 'react-native';
@@ -14,12 +21,18 @@ export default function RootLayout() {
   // Hydration-safe: render the static default (system scheme) first, then read
   // ?scheme= from the browser after mount — never during render.
   const [forced, setForced] = useState<ColorScheme>();
+  const pathname = usePathname();
+  const params = useGlobalSearchParams<{ scheme?: string }>();
+  // QA-only: re-read ?scheme= on every navigation — links carrying the param
+  // force the theme, links without it clear the override.
   useEffect(() => {
-    if (Platform.OS !== 'web' || !QA_ENABLED) return;
-    const q = new URLSearchParams(location.search).get('scheme');
+    if (!QA_ENABLED) return;
+    const raw =
+      Platform.OS === 'web' ? new URLSearchParams(location.search).get('scheme') : params.scheme;
+    const next = raw === 'dark' || raw === 'light' ? raw : undefined;
     // Microtask: applies before each screen's data-settled timer (macrotask).
-    if (q === 'dark' || q === 'light') void Promise.resolve().then(() => setForced(q));
-  }, []);
+    void Promise.resolve().then(() => setForced(next));
+  }, [pathname, params.scheme]);
   const resolved = forced ?? (colorScheme === 'dark' ? 'dark' : 'light');
   return (
     <ThemeProvider scheme={resolved}>

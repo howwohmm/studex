@@ -4,11 +4,11 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-  useReducedMotion,
   Easing,
 } from 'react-native-reanimated';
 import { GlassSurface } from './GlassSurface';
 import { Text } from './Text';
+import { useReducedMotion } from '../reduced-motion';
 import { useTheme } from '../theme';
 import { haptic } from '../haptics';
 

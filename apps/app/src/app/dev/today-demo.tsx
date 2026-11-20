@@ -4,12 +4,13 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  useReducedMotion,
   Easing,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import Head from 'expo-router/head';
+
+import { useReducedMotion } from '@/lib/reduced-motion';
 
 import { useSettled } from '@/lib/settled';
 import { t } from '@studex/copy';
@@ -162,17 +163,22 @@ export default function TodayDemo() {
   const insets = useSafeAreaInsets();
   const [slots, dispatch] = useReducer(reducer, INITIAL);
   const { clock: clockParam } = useLocalSearchParams<{ clock?: string }>();
-  // Hydration-safe: render the static default (midday) first, then read ?clock=
-  // from the browser after mount — never during render.
-  const [clockIdx, setClockIdx] = useState(1);
+  // Native deep links can seed the clock on first render; web must render the
+  // static default (midday) and read ?clock= after mount to stay hydration-safe.
+  const [clockIdx, setClockIdx] = useState(() => {
+    if (Platform.OS === 'web') return 1;
+    const idx = ['morning', 'midday', 'evening'].indexOf(clockParam ?? '');
+    return idx >= 0 ? idx : 1;
+  });
   const [clockReady, setClockReady] = useState(Platform.OS !== 'web');
   useEffect(() => {
     const raw =
       Platform.OS === 'web' ? new URLSearchParams(location.search).get('clock') : clockParam;
     const idx = ['morning', 'midday', 'evening'].indexOf(raw ?? '');
-    // Microtask: applies before the data-settled timer (macrotask).
+    // Microtask: applies before the data-settled timer (macrotask). A missing
+    // or invalid clock resets to midday.
     void Promise.resolve().then(() => {
-      if (idx >= 0) setClockIdx(idx);
+      setClockIdx(idx >= 0 ? idx : 1);
       setClockReady(true);
     });
   }, [clockParam]);

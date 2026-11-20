@@ -107,9 +107,11 @@ test.describe('today-demo', () => {
   });
 
   test('reduce motion shows the final % immediately', async ({ page }) => {
+    const checkConsole = watchConsole(page);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/dev/today-demo');
     await expect(page.getByText(/^\d+%$/).first()).toBeVisible();
+    checkConsole();
   });
 });
 
