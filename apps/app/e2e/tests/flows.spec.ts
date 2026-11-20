@@ -117,7 +117,10 @@ test.describe('today-demo', () => {
 
 test.describe('static server hardening', () => {
   test('path traversal is rejected', async ({ page }) => {
-    const res = await page.goto('/..%2f..%2fpackage.json');
-    expect([403, 404]).toContain(res?.status());
+    for (const path of ['/..%2f..%2fpackage.json', '/%2e%2e/%2e%2e/package.json']) {
+      const res = await page.goto(path);
+      expect([403, 404]).toContain(res?.status());
+      expect(await res?.text()).not.toContain('@studex/app');
+    }
   });
 });

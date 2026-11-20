@@ -45,8 +45,8 @@ createServer((req, res) => {
   } catch {
     return deny(400);
   }
+  // normalize() collapses '..' segments; the resolve + startsWith check below is the real guard.
   const rel = normalize(pathname);
-  if (rel.includes('..')) return deny(403);
   for (const cand of [rel, rel + '.html', join(rel, 'index.html')]) {
     const f = resolve(dir, '.' + cand);
     if (f !== dir && !f.startsWith(dir + sep)) return deny(403);
