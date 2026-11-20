@@ -7,7 +7,7 @@ import {
 import '@fontsource-variable/dm-sans';
 import '@fontsource-variable/manrope';
 import { dateKey, freshState } from './model.js';
-import { getFile, getFileKeys, loadWorkspace, saveWorkspace } from './storage.js';
+import { getFile, loadWorkspace, reconcileFileKeys, saveWorkspace } from './storage.js';
 import { pdfMaterialText } from './files.js';
 import { WorkspaceDialog } from './dialogs.jsx';
 import Overview from './overview.jsx';
@@ -22,7 +22,7 @@ const nav = [
 const readRoute = () => window.location.hash.slice(1).replace(/^\//, '') || 'overview';
 const pageFor = (route) => route === 'timetable/week' ? 'timetable' : route.startsWith('subject/') ? 'subjects'
   : route.startsWith('attendance/') ? 'attendance' : route;
-const mobileNav = [...nav.filter(([id]) => id !== 'library'), ['subjects', 'Subjects', BookOpen]];
+const mobileNav = [...nav, ['subjects', 'Subjects', BookOpen]];
 const scrollToTop = () => {
   window.scrollTo(0, 0);
   document.querySelector('.workspace-main')?.scrollTo(0, 0);
@@ -46,7 +46,8 @@ function App() {
   const [originals, setOriginals] = useState(null);
   const subject = route.startsWith('subject/') ? state.subjects.find((s) => s.id === route.split('/')[1]) : null;
   const currentPage = pageFor(route);
-  const page = nav.find(([id]) => id === currentPage)?.[1] || (currentPage === 'settings' ? 'Settings' : 'Subjects');
+  const page = nav.find(([id]) => id === currentPage)?.[1] ??
+    (currentPage === 'settings' ? 'Settings' : currentPage === 'subjects' ? 'Subjects' : 'Page not found');
   const initials = state.profile.name.trim().split(/\s+/).slice(0, 2).map((v) => v.charAt(0)).join('').toUpperCase() || 'S';
   const missingOriginals = new Set(originals?.files === state.files
     ? state.files.filter((file) => file.hash && !originals.keys.has(file.id)).map((file) => file.id) : []);
@@ -83,9 +84,8 @@ function App() {
     return () => clearTimeout(timer);
   }, [note]);
   useEffect(() => {
-    if (!state.files.some((file) => file.hash)) return;
     let active = true;
-    const refresh = () => { void getFileKeys().then((keys) => {
+    const refresh = () => { void reconcileFileKeys().then((keys) => {
       if (active) setOriginals({ files: state.files, keys: new Set(keys) });
     }, () => { if (active) setOriginals(null); }); };
     refresh();
@@ -195,7 +195,7 @@ function App() {
     <div className="mobile-dock">
       {notice}
       <nav className="bottom-nav" aria-label="Quick navigation">
-        {mobileNav.map(([path, label, Icon]) => <NavLink key={path} path={path} label={label === 'Assignments' ? 'Tasks' : label} icon={Icon} route={route} go={go}/>)}
+        {mobileNav.map(([path, label, Icon]) => <NavLink key={path} path={path} label={path === 'assignments' ? 'Tasks' : label} icon={Icon} route={route} go={go}/>)}
         <button className="mobile-add" aria-label="Quick actions" onClick={() => setAction({ type: 'quick' })}><Plus size={20}/><span>Add</span></button>
       </nav>
     </div>

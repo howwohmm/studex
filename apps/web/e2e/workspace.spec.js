@@ -5,6 +5,21 @@ const nav = (page) => page.getByRole('navigation', { name: 'Main navigation' });
 const preview = (page) => page.getByRole('heading', { name: 'Review imported classes' });
 const uploadInput = (page) => dialog(page).locator('input[type=file]');
 
+const originalKeys = (page, clear = false) => page.evaluate((clear) => new Promise((resolve, reject) => {
+  const request = indexedDB.open('studex-files', 1);
+  request.onerror = () => reject(request.error);
+  request.onupgradeneeded = () => request.result.createObjectStore('files');
+  request.onsuccess = () => {
+    const db = request.result;
+    const tx = db.transaction('files', clear ? 'readwrite' : 'readonly');
+    const store = tx.objectStore('files');
+    if (clear) store.clear();
+    const keys = store.getAllKeys();
+    tx.oncomplete = () => { db.close(); resolve(keys.result); };
+    tx.onabort = () => { db.close(); reject(tx.error); };
+  };
+}), clear);
+
 test('log and correct a scheduled class without duplicating attendance', async ({ page }) => {
   await page.goto('/');
   const today = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Today’s timetable' }) });
@@ -145,6 +160,18 @@ test('review CSV changes before linking imported classes to the subject workspac
   await expect(page.getByRole('heading', { name: 'Computer Graphics', exact: true })).toBeVisible();
 });
 
+test('a long timetable review leaves the import action visible on a phone', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.goto('/#/timetable');
+  await page.getByRole('button', { name: 'Import', exact: true }).click();
+  const text = Array.from({ length: 24 }, (_, i) => `Monday,06:00,07:00,Course ${i + 1}`).join('\n');
+  await dialog(page).getByLabel('Timetable text').fill('day,start,end,subject\n' + text);
+  await dialog(page).getByRole('button', { name: 'Review classes' }).click();
+  await expect(dialog(page).getByRole('group', { name: 'Class 24', exact: true })).toBeAttached();
+  await expect(dialog(page).getByRole('checkbox', { name: /Import even though/ })).toBeInViewport();
+  await expect(dialog(page).getByRole('button', { name: 'Import classes' })).toBeInViewport({ ratio: 1 });
+});
+
 function textPdf(line) {
   const stream = 'BT /F1 15 Tf 44 730 Td (' + line + ') Tj ET';
   const objects = [
@@ -226,6 +253,42 @@ test('store a material locally, find it by content, and delete its original', as
   }))).toBe(0);
 });
 
+test('restore a missing material original and clean up bytes when workspace metadata is cleared', async ({ page }) => {
+  await page.goto('/#/library');
+  const file = { name: 'study.pdf', mimeType: 'application/pdf', buffer: textPdf('Linear transformations') };
+  async function upload(displayName) {
+    await page.getByRole('button', { name: 'Upload material', exact: true }).first().click();
+    await uploadInput(page).setInputFiles(file);
+    await dialog(page).getByLabel('Display name').fill(displayName);
+    await dialog(page).getByRole('button', { name: 'Upload material', exact: true }).click();
+  }
+  await upload('Linear algebra handout');
+  const material = page.getByRole('button', { name: /Linear algebra handout/ });
+  await expect(material).toBeVisible();
+  expect(await originalKeys(page)).toHaveLength(1);
+  await originalKeys(page, true);
+  await page.reload();
+  await expect(material).toContainText('Original missing');
+  await material.click();
+  await dialog(page).getByRole('button', { name: 'Restore original' }).click();
+  await uploadInput(page).setInputFiles({ ...file, buffer: textPdf('A different original') });
+  await dialog(page).getByRole('button', { name: 'Restore original' }).click();
+  await expect(dialog(page).getByRole('alert')).toHaveText(/Choose the same original/);
+  await uploadInput(page).setInputFiles(file);
+  await dialog(page).getByRole('button', { name: 'Restore original' }).click();
+  await expect(material).not.toContainText('Original missing');
+  await material.click();
+  const download = page.waitForEvent('download');
+  await dialog(page).getByRole('button', { name: 'Download' }).click();
+  expect((await download).suggestedFilename()).toBe(file.name);
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await expect.poll(() => originalKeys(page)).toEqual([]);
+  await upload('Restored after clearing workspace');
+  await expect(page.getByRole('button', { name: /Restored after clearing workspace/ })).toBeVisible();
+  expect(await originalKeys(page)).toHaveLength(1);
+});
+
 test('mobile navigation and settings let a student start a blank workspace', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
@@ -234,6 +297,7 @@ test('mobile navigation and settings let a student start a blank workspace', asy
   await page.getByRole('button', { name: 'Open navigation' }).click();
   await page.getByRole('link', { name: 'Settings', exact: true }).click();
   await page.getByRole('button', { name: 'Start my own workspace' }).click();
+  await expect(dialog(page).getByRole('button', { name: 'Cancel' })).toBeFocused();
   await dialog(page).getByRole('button', { name: 'Replace workspace' }).click();
   await expect(page.getByText('Your workspace is ready.')).toBeVisible();
   await page.reload();
@@ -249,6 +313,13 @@ test('phone dock makes actions reachable and attendance can be undone', async ({
   await page.goto('/');
   const dock = page.getByRole('navigation', { name: 'Quick navigation' });
   await expect(dock.getByRole('link', { name: 'Subjects' })).toBeVisible();
+  await dock.getByRole('link', { name: 'Library' }).click();
+  await expect(page.getByRole('heading', { name: 'Library', exact: true })).toBeVisible();
+  for (const link of await dock.getByRole('link').all()) {
+    const box = await link.boundingBox();
+    expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(44);
+  }
+  await dock.getByRole('link', { name: 'Overview' }).click();
   const add = dock.getByRole('button', { name: 'Quick actions' });
   await add.click();
   await dialog(page).getByRole('button', { name: 'New assignment' }).click();
@@ -266,6 +337,21 @@ test('phone dock makes actions reachable and attendance can be undone', async ({
   await undo.click();
   await expect(target).not.toContainText('Present');
   await expect(page.getByText('Attendance restored.')).toBeVisible();
+});
+
+test('an unknown route has the right breadcrumb and long subject names wrap on phones', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.goto('/#/nonsense');
+  await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
+  await expect(page.getByRole('banner').getByText('Page not found')).toBeVisible();
+  await page.getByRole('navigation', { name: 'Quick navigation' }).getByRole('link', { name: 'Subjects' }).click();
+  await page.getByRole('button', { name: 'Add subject', exact: true }).click();
+  const title = 'Advanced Information Systems Engineering and Distributed Computing';
+  await dialog(page).getByLabel('Subject name').fill(title);
+  await dialog(page).getByRole('button', { name: 'Save', exact: true }).click();
+  const subject = page.getByRole('button', { name: new RegExp(title) }).getByText(title, { exact: true });
+  await expect(subject).toHaveCSS('white-space', 'normal');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360);
 });
 
 test('workspace changes in another tab keep the open draft and restore keyboard focus', async ({ page, context }) => {

@@ -83,6 +83,7 @@ export function ImportTimetable({ state, apply, close }) {
     <form onSubmit={submit}>
       {review ? <div className="import-review">
         <p className="muted small">{rows.length} selected. Unrecognised lines are skipped. New subject names create new subjects.</p>
+        <div className="import-review-list" role="region" aria-label="Classes to review" tabIndex={0}>
         {review.map((row, i) => <fieldset key={row.id} className="import-row">
           <legend className="sr-only">Class {i + 1}</legend>
           <label className="import-include"><input aria-label={`Class ${i + 1}`} type="checkbox" checked={row.selected} onChange={(e) => edit(row.id, 'selected', e.target.checked)}/></label>
@@ -98,6 +99,7 @@ export function ImportTimetable({ state, apply, close }) {
             </div>
           </details>
         </fieldset>)}
+        </div>
         {conflict && <label className="warning"><CircleAlert size={16}/><input type="checkbox" checked={ackConflict} onChange={(e) => setAckConflict(e.target.checked)}/>Import even though some times overlap</label>}
       </div> : <>
         <label className="file-picker"><FileText size={22}/><span>{busy ? 'Reading timetable…' : filename || 'Choose a timetable file'}</span>

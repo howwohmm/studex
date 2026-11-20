@@ -34,7 +34,7 @@ An existing subject is matched by name or course code. Otherwise, a subject is c
 
 ## Storage and rollout
 
-Your workspace is stored in this browser origin and uploaded originals in IndexedDB. OCR and PDF extraction run locally; academic files are not sent to a service. If PDF extraction needs a connection to load the reader, it retries after reconnecting. There is no account, backup, or cross-device sync. Clearing site data removes your workspace; replacing the example workspace removes uploaded materials.
+Your workspace is stored in this browser origin and uploaded originals in IndexedDB. If a Library entry loses its original, re-upload the same file to restore it without losing its details. Browsers with Web Locks remove leftover originals that no longer have an entry. OCR and PDF extraction run locally; academic files are not sent to a service. If PDF extraction needs a connection to load the reader, it retries after reconnecting. There is no account, backup, or cross-device sync. Clearing site data removes your workspace; replacing the example workspace removes uploaded materials.
 
 The selected repository previously contained only pitch materials. This first release adds the browser-local core without changing those materials. Next: authenticated accounts and sync, native iOS and Android clients against the shared model, then richer document processing and AI Tutor. This release does not include those, calendar sync or push reminders. The supplied spec ended during the Library requirements, so later modules need the complete spec before implementation.
 

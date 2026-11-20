@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { BookOpen, Check, CircleAlert, ClipboardList, Download, FileText, MapPin, Search, Trash2, Upload } from 'lucide-react';
 import { ATTENDANCE_STATUSES, COLORS, DAYS, STATUSES, TASK_TYPES, dayOf, freshState, matchingRecord, niceDate, occurrenceLabel, overlaps, scheduleFor, taskKey, uid, upsertRecord } from './model.js';
-import { clearFiles, deleteFile, getFile, putFile } from './storage.js';
+import { clearFiles, deleteFile, getFile, loadWorkspace, putFile, withLibraryLock } from './storage.js';
 import { fileAccept, fileHash, pdfMaterialText, verifyFile } from './files.js';
 import { ImportTimetable } from './import.jsx';
 import { attendanceColor, Badge, Button, DayLabel, Dialog, Empty, Field, SubjectOptions, Tile, TimeRange } from './ui.jsx';
@@ -255,6 +255,7 @@ function ClassDialog({ action, state, today, apply, close, open }) {
 }
 
 function UploadDialog({ action, state, today, apply, close }) {
+  const restoring = action.item;
   const [file, setFile] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -266,43 +267,50 @@ function UploadDialog({ action, state, today, apply, close }) {
     try {
       const mime = await verifyFile(file);
       const hash = await fileHash(file);
-      if (state.files.some((item) => item.hash === hash)) throw new Error('This file is already in your library.');
-      const details = { id: uid(), mime, hash, name: file.name, size: file.size, date: today,
-        title: String(data.get('title')).trim() || file.name, subjectId: String(data.get('subjectId')) };
-      if (mime === 'text/plain') details.text = (await file.slice(0, 128_000).text()).slice(0, 40_000);
-      if (mime === 'application/pdf') Object.assign(details, await pdfMaterialText(file));
-      const notice = details.textState === 'pending' ? 'PDF saved. Text extraction will retry when you reconnect.'
-        : details.textState === 'unavailable' ? 'PDF saved, but its text couldn’t be read.'
-        : details.textState === 'no-text' ? 'PDF saved. No searchable text was found.' : 'Material uploaded.';
-      await putFile(details.id, file);
-      let saved = false;
-      try {
-        saved = apply((current) => {
+      if (restoring && restoring.hash !== hash) throw new Error('Choose the same original file to restore this material.');
+      await withLibraryLock(async () => {
+        const duplicate = (loadWorkspace() ?? state).files.find((item) => item.hash === hash);
+        if (restoring && duplicate?.id !== restoring.id) throw new Error('This material no longer exists in your library.');
+        if (duplicate && await getFile(duplicate.id)) throw new Error('This file is already in your library.');
+        if (duplicate) {
+          await putFile(duplicate.id, file);
+          if (!apply((current) => ({ ...current, files: [...current.files] }), 'Original restored.')) {
+            throw new Error('Could not refresh the library. Reopen it to see the restored original.');
+          }
+          return;
+        }
+        const details = { id: hash, mime, hash, name: file.name, size: file.size, date: today,
+          title: String(data.get('title')).trim() || file.name, subjectId: String(data.get('subjectId')) };
+        if (mime === 'text/plain') details.text = (await file.slice(0, 128_000).text()).slice(0, 40_000);
+        if (mime === 'application/pdf') Object.assign(details, await pdfMaterialText(file));
+        const notice = details.textState === 'pending' ? 'PDF saved. Text extraction will retry when you reconnect.'
+          : details.textState === 'unavailable' ? 'PDF saved, but its text couldn’t be read.'
+          : details.textState === 'no-text' ? 'PDF saved. No searchable text was found.' : 'Material uploaded.';
+        await putFile(details.id, file);
+        const saved = apply((current) => {
           if (current.files.some((item) => item.hash === hash)) throw new Error('This file is already in your library.');
           if (details.subjectId && !current.subjects.some((subject) => subject.id === details.subjectId)) {
             throw new Error('The selected subject no longer exists. Choose another subject.');
           }
           return { ...current, files: [...current.files, details] };
         }, notice);
-        if (!saved) setError('Could not save to this browser. Check available storage and try again.');
-      } finally {
-        if (!saved) await deleteFile(details.id);
-      }
+        if (!saved) throw new Error('Could not save to this browser. Check available storage and try again.');
+      });
     } catch (err) { setError(err.message || 'Could not store this file.'); }
     finally { setBusy(false); }
   }
-  return <Dialog title="Upload material" subtitle="Store and organise a file in this browser. Up to 20 MB per file." close={close} busy={busy}>
-    {state.demo && <p className="warning demo-file-warning">Files you add here are deleted when you replace the example workspace in Settings.</p>}
+  return <Dialog title={restoring ? 'Restore original' : 'Upload material'} subtitle={restoring ? 'Choose the original file. Your saved details will stay the same.' : 'Store and organise a file in this browser. Up to 20 MB per file.'} close={close} busy={busy}>
+    {state.demo && !restoring && <p className="warning demo-file-warning">Files you add here are deleted when you replace the example workspace in Settings.</p>}
     <form onSubmit={submit}>
       <label className="file-picker"><Upload size={21}/><span>{file?.name || 'Choose a PDF, slide deck, document, or image'}</span>
         <input type="file" accept={fileAccept} disabled={busy} onChange={(e) => { setFile(e.target.files[0] || null); setError(''); }}/></label>
-      <div className="form-grid">
+      {!restoring && <div className="form-grid">
         <Field label="Display name" wide><input name="title" maxLength={100} placeholder="Defaults to the filename" disabled={busy}/></Field>
         <Field label="Subject" wide><select name="subjectId" disabled={busy} defaultValue={action.subjectId || ''}><SubjectOptions subjects={state.subjects} optional/></select></Field>
-      </div>
+      </div>}
       {error && <p className="form-error" role="alert">{error}</p>}
       <div className="dialog-actions"><Button variant="secondary" disabled={busy} onClick={close}>Cancel</Button>
-        <Button icon={Upload} disabled={busy} type="submit">{busy ? 'Saving…' : 'Upload material'}</Button></div>
+        <Button icon={Upload} disabled={busy} type="submit">{busy ? 'Saving…' : restoring ? 'Restore original' : 'Upload material'}</Button></div>
     </form>
   </Dialog>;
 }
@@ -359,7 +367,8 @@ function FileDialog({ item, state, apply, close, open, missingOriginals }) {
       {error && <p className="form-error" role="alert">{error}</p>}
       <div className="dialog-actions">
         <Button variant="danger-text" icon={Trash2} disabled={busy} onClick={() => open({ type: 'removeFile', item })}>Delete</Button>
-        <Button variant="secondary" icon={Download} onClick={download} disabled={missing || busy}>Download</Button>
+        {missing ? <Button variant="secondary" icon={Upload} onClick={() => open({ type: 'upload', item })}>Restore original</Button> :
+          <Button variant="secondary" icon={Download} onClick={download} disabled={busy}>Download</Button>}
         <Button icon={Check} type="submit" disabled={busy}>Save details</Button>
       </div>
     </form>
@@ -383,8 +392,10 @@ function ConfirmDialog({ action, state, today, apply, close, go }) {
     setBusy(true); setError('');
     try {
       if (type === 'removeFile') {
-        if (item.hash) await deleteFile(item.id);
-        apply((current) => ({ ...current, files: current.files.filter((f) => f.id !== item.id) }), 'Material deleted.');
+        await withLibraryLock(async () => {
+          const saved = apply((current) => ({ ...current, files: current.files.filter((f) => f.id !== item.id) }), 'Material deleted.');
+          if (saved && item.hash) await deleteFile(item.id);
+        });
       } else if (type === 'removeTask') {
         let removed;
         apply((current) => {
@@ -402,10 +413,14 @@ function ConfirmDialog({ action, state, today, apply, close, go }) {
         apply({ ...state, events: single ? replace(state.events, { ...item, skipped: [...(item.skipped ?? []), date] })
           : state.events.filter((e) => e.id !== item.id) }, 'Class removed.');
       } else if (type === 'reset') {
-        await clearFiles();
         const fresh = freshState(action.demo, today);
-        if (apply((current) => !action.demo && current.profile.edited ? { ...fresh, profile: current.profile } : fresh,
-          action.demo ? 'Example workspace loaded.' : 'Your workspace is ready.')) go('overview');
+        await withLibraryLock(async () => {
+          if (apply((current) => !action.demo && current.profile.edited ? { ...fresh, profile: current.profile } : fresh,
+            action.demo ? 'Example workspace loaded.' : 'Your workspace is ready.')) {
+            go('overview');
+            await clearFiles();
+          }
+        });
       }
     } catch (err) { setError(err.message || 'This change couldn’t be applied.'); }
     finally { setBusy(false); }
@@ -413,7 +428,7 @@ function ConfirmDialog({ action, state, today, apply, close, go }) {
   return <Dialog title={options[type][0]} subtitle={options[type][1]} close={close} busy={busy}>
     {error && <p className="form-error" role="alert"><CircleAlert size={16}/>{error}</p>}
     <div className="dialog-actions">
-      <Button variant="secondary" onClick={close} disabled={busy}>Cancel</Button>
+      <Button variant="secondary" onClick={close} disabled={busy} data-initial-focus>Cancel</Button>
       {type === 'removeEvent' && !item.date && <Button variant="secondary" onClick={() => execute(true)} disabled={busy}>Just this class</Button>}
       <Button variant="danger" icon={Trash2} onClick={() => execute()} disabled={busy}>{type === 'reset' ? 'Replace workspace' : type === 'removeEvent' && !item.date ? 'Remove series' : 'Remove'}</Button>
     </div>

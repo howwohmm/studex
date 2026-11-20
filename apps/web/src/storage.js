@@ -37,6 +37,26 @@ async function withFiles(mode, run) {
 }
 export const putFile = (id, file) => withFiles('readwrite', (store) => store.put(file, id));
 export const getFile = (id) => withFiles('readonly', (store) => store.get(id));
-export const getFileKeys = () => withFiles('readonly', (store) => store.getAllKeys());
+const getFileKeys = () => withFiles('readonly', (store) => store.getAllKeys());
 export const deleteFile = (id) => withFiles('readwrite', (store) => store.delete(id));
 export const clearFiles = () => withFiles('readwrite', (store) => store.clear());
+
+export function withLibraryLock(run) {
+  return navigator.locks ? navigator.locks.request('studex-library', run) : run();
+}
+
+export function reconcileFileKeys() {
+  if (!navigator.locks) return getFileKeys();
+  return withLibraryLock(async () => {
+    const keys = await getFileKeys();
+    const saved = loadWorkspace();
+    if (!saved && localStorage.getItem(KEY) !== null) return keys;
+    const referenced = new Set((saved?.files ?? []).map((file) => file.id));
+    const orphaned = keys.filter((key) => !referenced.has(key));
+    if (orphaned.length) await withFiles('readwrite', (store) => {
+      for (const key of orphaned) store.delete(key);
+      return store.getAllKeys();
+    });
+    return keys.filter((key) => referenced.has(key));
+  });
+}
