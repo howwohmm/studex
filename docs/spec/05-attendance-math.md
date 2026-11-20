@@ -278,7 +278,7 @@ export interface TermEndForecast {
   maxSkippable: number; minToAttend: number;     // counts of occurrences; with mixed units, skip smallest units first
   reachable: boolean; maxReachableDisplay: string; // floor(100·(A+R_u)/(H+R_u))
 }
-export function termEndForecast(t: Tally, h: Horizon, policy: AttendancePolicy): TermEndForecast | null; // null when term end unknown
+export function termEndForecast(t: Tally, h: Horizon, policy: AttendancePolicy): TermEndForecast | null; // null when term end unknown, or nothing held and nothing left
 export function copyBand(t: Tally, k: number | null, policy: AttendancePolicy): 'above' | 'close' | 'below' | 'not_started';
 export function colorBand(t: Tally, k: number | null, policy: AttendancePolicy): 'good' | 'close' | 'below' | 'not_started';
 export function simulate(t: Tally, sequence: readonly { units: Units; status: MarkStatus; excusedKind?: ExcusedKind }[], policy: AttendancePolicy): Tally[];

@@ -2,9 +2,12 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "typecheck": {},
-    "test": {
-      "outputs": ["coverage/**"]
-    },
-    "lint": {}
+    "test": {},
+    "lint": {},
+    "test:coverage": {
+      "outputs": [
+        "coverage/**"
+      ]
+    }
   }
 }
