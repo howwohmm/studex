@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { attendance, dateKey, freshState, overlaps, scheduleFor, shiftDate, subjectAttendance, taskDeadlines, taskKey, upsertRecord, weekStart } from './model.js';
+import { attendance, dateKey, freshState, overlaps, remainingClasses, scheduleFor, shiftDate, subjectAttendance, taskDeadlines, taskKey, upsertRecord, weekStart } from './model.js';
 
 test('date keys, calendar weeks and day arithmetic use Indian civil dates', () => {
   assert.equal(dateKey(new Date('2026-01-31T18:29:59Z')), '2026-01-31');
@@ -78,6 +78,32 @@ test('missing and impossible attendance forecasts are neither zero nor invented'
   assert.deepEqual(attendance(2, 3, 100), { percent: 2 / 3 * 100, status: 'At risk', recover: null, miss: 0 });
   assert.equal(attendance(3, 4, 75).status, 'Close to limit');
   assert.equal(attendance(75, 100, 75.01).status, 'At risk');
+});
+
+test('remaining classes count only unmarked timetable occurrences within the term', () => {
+  const state = {
+    profile: { termStart: '2026-04-06', termEnd: '2026-04-20' },
+    events: [
+      { id: 'weekly', subjectId: 's', day: 1, skipped: ['2026-04-13'] },
+      { id: 'marked', subjectId: 's', day: 1 },
+      { id: 'once', subjectId: 's', date: '2026-04-15' },
+      { id: 'before', subjectId: 's', date: '2026-04-05' },
+      { id: 'after', subjectId: 's', date: '2026-04-21' },
+      { id: 'break', subjectId: 's', kind: 'Break', day: 1 },
+      { id: 'other', subjectId: 'other', date: '2026-04-15' },
+    ],
+    records: [
+      { eventId: 'weekly', date: '2026-04-13', status: 'Cancelled' },
+      { eventId: 'marked', date: '2026-04-06', status: 'Present' },
+      { eventId: 'marked', date: '2026-04-13', status: 'Cancelled' },
+      { date: '2026-04-15', status: 'Present' },
+    ],
+  };
+  assert.equal(remainingClasses(state, 's', '2026-04-05'), 4);
+  assert.equal(remainingClasses(state, 's', '2026-04-20'), 2);
+  assert.equal(remainingClasses(state, 's', '2026-04-21'), 0);
+  assert.equal(remainingClasses({ ...state, profile: {} }, 's', '2026-04-05'), null);
+  assert.equal(remainingClasses({ ...state, profile: {} }, 'other', '2026-04-05'), 1);
 });
 
 test('attendance forecast finds the exact eligibility boundary across counts and targets', () => {

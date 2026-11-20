@@ -55,6 +55,57 @@ test('attendance and timetable share one mark, and cancellation does not count',
   await expect(page.getByRole('button', { name: /Data Structures.*Absent/ })).toHaveCount(0);
 });
 
+test('removing a class drops only its mark by default, while keeping marks is opt-in', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-11-20T12:00:00Z'));
+  await page.goto('/#/timetable');
+  const scheduled = page.getByRole('button', { name: /Data Structures/ });
+  const mark = (name) => dialog(page).getByRole('button', { name, exact: true });
+  const keepMarks = dialog(page).getByRole('checkbox', { name: /Keep attendance marks/ });
+  await page.getByRole('button', { name: 'Previous week' }).click();
+  await scheduled.click();
+  await mark('Mark present').click();
+  await page.getByRole('button', { name: 'Today', exact: true }).click();
+  await scheduled.click();
+  await mark('Mark absent').click();
+  await scheduled.click();
+  await mark('Remove').click();
+  await expect(keepMarks).not.toBeChecked();
+  await mark('Just this class').click();
+  await expect(scheduled).toHaveCount(0);
+  await nav(page).getByRole('link', { name: 'Attendance' }).click();
+  await expect(page.getByText('22 attended · 3 missed · 25 held')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Data Structures.*Absent/ })).toHaveCount(0);
+  await nav(page).getByRole('link', { name: 'Timetable' }).click();
+  await page.getByRole('button', { name: 'Previous week' }).click();
+  await scheduled.click();
+  await mark('Remove').click();
+  await keepMarks.check();
+  await mark('Remove series').click();
+  await expect(scheduled).toHaveCount(0);
+  await nav(page).getByRole('link', { name: 'Attendance' }).click();
+  await page.reload();
+  await expect(page.getByText('22 attended · 3 missed · 25 held')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Data Structures.*9:00 AM.*Lecture.*Present/ })).toHaveCount(1);
+});
+
+test('attendance advice is capped by classes left before term end and disappears when none remain', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-11-20T12:00:00Z'));
+  await page.goto('/#/settings');
+  await page.getByRole('button', { name: 'Edit profile' }).click();
+  await dialog(page).getByLabel('Term end').fill('2026-11-20');
+  await dialog(page).getByRole('button', { name: 'Save', exact: true }).click();
+  await nav(page).getByRole('link', { name: 'Attendance' }).click();
+  const card = (name) => page.locator('.attendance-card').filter({ has: page.getByRole('heading', { name, exact: true }) });
+  await expect(card('Data Structures').getByText('You can miss 1 class in a row and stay eligible.')).toBeVisible();
+  await expect(card('Discrete Mathematics').getByText(/Even attending all remaining classes won’t reach your target/)).toBeVisible();
+  await expect(card('Operating Systems').getByText('No scheduled classes left this term.')).toBeVisible();
+  await nav(page).getByRole('link', { name: 'Timetable' }).click();
+  await page.getByRole('button', { name: /Data Structures/ }).click();
+  await dialog(page).getByRole('button', { name: 'Mark cancelled' }).click();
+  await nav(page).getByRole('link', { name: 'Attendance' }).click();
+  await expect(card('Data Structures').getByText('No scheduled classes left this term.')).toBeVisible();
+});
+
 test('create, complete, and find an assignment after reload', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('banner').getByRole('button', { name: 'New assignment' }).click();

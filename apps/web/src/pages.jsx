@@ -3,11 +3,30 @@ import {
   Archive, ArrowDownToLine, BookOpen, CalendarDays, ChartNoAxesCombined, ChevronLeft, ChevronRight,
   ClipboardList, FileText, Filter, FolderOpen, History, LayoutList, ListChecks, Plus, Search, Settings2, Upload,
 } from 'lucide-react';
-import { activeTask, niceDate, occurrenceLabel, orderedTasks, overlaps, scheduleFor, shiftDate, subjectAttendance, weekStart } from './model.js';
+import { activeTask, niceDate, occurrenceLabel, orderedTasks, overlaps, remainingClasses, scheduleFor, shiftDate, subjectAttendance, weekStart } from './model.js';
 import { attendanceColor, Badge, Button, DayLabel, Empty, EventRow, IconButton, PageTitle, PanelHead, TaskRow, TextLink, Tile } from './ui.jsx';
 
 const riskColor = (status) => ({ 'At risk': 'rose', 'Close to limit': 'amber', 'On track': 'mint' }[status] || 'neutral');
 const matches = (needle, ...values) => values.some((v) => String(v ?? '').toLowerCase().includes(needle.trim().toLowerCase()));
+const classCount = (count) => `${count} ${count === 1 ? 'class' : 'classes'}`;
+
+function AttendanceForecast({ info, remaining, termEnd }) {
+  let advice;
+  if (remaining === null) advice = 'Set a term end in Settings to see how many classes you can miss.';
+  else if (!remaining) advice = termEnd ? 'No scheduled classes left this term.' : 'No upcoming classes are scheduled.';
+  else if (!info.held) advice = 'Log a class to see your forecast.';
+  else if (info.status === 'At risk') {
+    advice = info.recover === null ? 'A 100% target cannot be reached after an absence.'
+      : info.recover > remaining ? `Even attending all remaining classes won’t reach your target. You need ${classCount(info.recover)} in a row.`
+      : `Attend ${classCount(info.recover)} in a row to reach your target.`;
+  } else {
+    const canMiss = Math.min(info.miss, remaining);
+    advice = canMiss ? `You can miss ${classCount(canMiss)} in a row and stay eligible.` : 'Attend your next class to stay eligible.';
+  }
+  return <div className="forecast"><p>{advice}</p>
+    {remaining > 0 && <small>{classCount(remaining)} left on the timetable{termEnd ? ' this term' : ''}, including unmarked classes today.</small>}
+  </div>;
+}
 
 export function Timetable({ state, today, open, initialView = 'Day' }) {
   const [selected, select] = useState(today);
@@ -67,10 +86,7 @@ export function Attendance({ state, today, open, initialSubject = '' }) {
           <div className="attendance-value"><strong>{info.held ? info.percent.toFixed(1) + '%' : '—'}</strong><Badge color={riskColor(info.status)}>{info.status}</Badge></div>
           <div className="progress" aria-hidden="true"><span className={'accent-' + (info.status === 'At risk' ? 'rose' : subject.color)} style={{ width: (info.percent ?? 0) + '%' }}/></div>
           <p className="attendance-count">{info.present} attended · {info.held - info.present} missed · {info.held} held</p>
-          <div className="forecast"><p>{!info.held ? 'Log a class to see your forecast.' : info.status === 'At risk'
-            ? info.recover === null ? 'A perfect target cannot be recovered after an absence.' : `If enough classes remain, attend ${info.recover} in a row to reach your target.`
-            : info.miss ? `You can miss ${info.miss} ${info.miss === 1 ? 'class' : 'classes'} in a row and stay eligible.` : 'Attend your next class to stay eligible.'}</p>
-            {info.held > 0 && <small>A calculation based on recorded classes only; it doesn’t account for your timetable or term end.</small>}</div>
+          <AttendanceForecast info={info} remaining={remainingClasses(state, subject.id, today)} termEnd={state.profile.termEnd}/>
         </section>;
       })}
     </div> : <section className="panel"><Empty icon={ChartNoAxesCombined} title="No active subjects" text="Add a subject before you log attendance." action="Add a subject" onAction={() => open({ type: 'subject' })}/></section>}

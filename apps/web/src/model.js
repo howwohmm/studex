@@ -68,6 +68,36 @@ export function subjectAttendance(state, subject) {
   return { present, held, ...attendance(present, held, subject.threshold) };
 }
 
+export function remainingClasses(state, subjectId, today) {
+  const { termStart, termEnd } = state.profile;
+  const from = termStart && termStart > today ? termStart : today;
+  if (termEnd && termEnd < from) return 0;
+  const marked = new Map();
+  for (const { eventId, date } of state.records) {
+    if (!eventId || date < from || (termEnd && date > termEnd)) continue;
+    if (!marked.has(eventId)) marked.set(eventId, new Set());
+    marked.get(eventId).add(date);
+  }
+
+  let remaining = 0;
+  for (const event of state.events) {
+    if (event.subjectId !== subjectId || event.kind === 'Break') continue;
+    const excluded = new Set([...(event.skipped ?? []), ...(marked.get(event.id) ?? [])]);
+    if (event.date) {
+      if (event.date >= from && (!termEnd || event.date <= termEnd) && !excluded.has(event.date)) remaining++;
+    } else {
+      if (!termEnd) return null;
+      const first = shiftDate(from, (event.day - dayOf(from) + 7) % 7);
+      if (first > termEnd) continue;
+      remaining += 1 + Math.floor((dateAt(termEnd) - dateAt(first)) / (7 * 86400000));
+      for (const date of excluded) {
+        if (date >= first && date <= termEnd && dayOf(date) === event.day) remaining--;
+      }
+    }
+  }
+  return remaining;
+}
+
 export function matchingRecord(records, input) {
   return records.find((record) => input.id === record.id) ||
     (input.eventId ? records.find((record) => record.eventId === input.eventId && record.date === input.date) : undefined);

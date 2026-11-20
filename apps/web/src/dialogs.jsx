@@ -28,6 +28,9 @@ function saveAttendance(apply, input, message) {
     const linked = input.eventId && matchingRecord(current.records, { eventId: input.eventId, date: input.date });
     if (input.id && linked && input.id !== linked.id) throw new Error('That class already has a mark. Remove this extra mark to fix the duplicate.');
     before = matchingRecord(current.records, input);
+    if (!before && input.eventId && !scheduleFor(current, input.date).some((entry) => entry.id === input.eventId && entry.subjectId === input.subjectId)) {
+      throw new Error('This class is no longer on the timetable.');
+    }
     const event = current.events.find((entry) => entry.id === input.eventId);
     const occurrence = input.eventId ? before?.occurrence || (event && { start: event.start, end: event.end, kind: event.kind }) : undefined;
     const records = upsertRecord(current.records, { ...input, occurrence });
@@ -227,16 +230,19 @@ function FormDialog({ action, state, today, apply, close, open }) {
 }
 
 function ClassDialog({ action, state, today, apply, close, open }) {
+  const [error, setError] = useState('');
   const { item, date } = action;
   const subject = state.subjects.find((s) => s.id === item.subjectId);
   const record = state.records.find((r) => r.eventId === item.id && r.date === date);
   function mark(status) {
     const input = { eventId: item.id, subjectId: item.subjectId, date, status };
     if (record?.status === status) { close(); return; }
-    saveAttendance(apply, input, 'Marked ' + status.toLowerCase() + '.');
+    try { saveAttendance(apply, input, 'Marked ' + status.toLowerCase() + '.'); }
+    catch (err) { setError(err.message); }
   }
   return <Dialog title={item.title || subject?.title || item.kind} subtitle={item.kind + (item.date ? ' · One-time slot' : ' · Repeats weekly')} close={close}>
     <div className="class-meta"><DayLabel date={date}/><TimeRange item={item}/><span className="day-label"><MapPin size={15}/>{item.room || 'No room set'}</span></div>
+    {error && <p className="form-error" role="alert">{error}</p>}
     {item.kind !== 'Break' && <div className="class-attendance">
       <strong>Attendance</strong>
       {record && <Badge color={attendanceColor(record.status)}>{record.status}</Badge>}
@@ -383,13 +389,15 @@ function FileDialog({ item, state, apply, close, open, missingOriginals }) {
 function ConfirmDialog({ action, state, today, apply, close, go }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [keepMarks, setKeepMarks] = useState(false);
   const { type, item, subject, date } = action;
   const options = {
     removeFile: ['Delete material?', 'The file and its searchable text will be removed from this browser.'],
     removeTask: ['Delete assignment?', 'This assignment will be removed from your workspace.'],
     removeRecord: ['Remove attendance mark?', 'This occurrence becomes unmarked. It won’t count towards attendance unless you record it again.'],
     removeUnit: ['Delete unit?', 'The unit and its topics will be removed from the subject.'],
-    removeEvent: ['Remove class?', 'Existing attendance records will stay in your history.'],
+    removeEvent: ['Remove class?', item?.kind === 'Break' ? 'This removes the break from your timetable.'
+      : 'Removing a class also removes its attendance marks and updates your totals, unless you choose to keep them.'],
     reset: [action.demo ? 'Load example data?' : 'Start your own workspace?', 'This replaces classes, assignments, attendance and uploaded files.' +
       (!action.demo && state.profile.edited ? ' Your edited academic profile will be kept.' : ' The current academic profile will be replaced.')],
   };
@@ -415,8 +423,18 @@ function ConfirmDialog({ action, state, today, apply, close, go }) {
           units: (latest.units ?? []).filter((u) => u.id !== item.id),
         })), 'Unit deleted.');
       } else if (type === 'removeEvent') {
-        apply({ ...state, events: single ? replace(state.events, { ...item, skipped: [...(item.skipped ?? []), date] })
-          : state.events.filter((e) => e.id !== item.id) }, 'Class removed.');
+        apply((current) => {
+          const latest = current.events.find((entry) => entry.id === item.id);
+          if (!latest || (single && latest.date)) throw new Error('The timetable has changed. Reopen the class and try again.');
+          const affected = (record) => record.eventId === item.id && (!single || record.date === date);
+          const occurrence = { start: latest.start, end: latest.end, kind: latest.kind };
+          const events = single ? replace(current.events, { ...latest, skipped: [...new Set([...(latest.skipped ?? []), date])] })
+            : current.events.filter((entry) => entry.id !== item.id);
+          const records = keepMarks
+            ? current.records.map((record) => affected(record) && !record.occurrence ? { ...record, occurrence } : record)
+            : current.records.filter((record) => !affected(record));
+          return { ...current, events, records };
+        }, single || item.date ? 'Class removed.' : 'Class series removed.');
       } else if (type === 'reset') {
         const fresh = freshState(action.demo, today);
         await withLibraryLock(async () => {
@@ -432,6 +450,10 @@ function ConfirmDialog({ action, state, today, apply, close, go }) {
   }
   return <Dialog title={options[type][0]} subtitle={options[type][1]} close={close} busy={busy}>
     {error && <p className="form-error" role="alert"><CircleAlert size={16}/>{error}</p>}
+    {type === 'removeEvent' && item.kind !== 'Break' && <label className="check-field">
+      <input type="checkbox" checked={keepMarks} onChange={(event) => setKeepMarks(event.target.checked)} disabled={busy}/>
+      Keep attendance marks for the removed {item.date ? 'class' : 'class or series'}
+    </label>}
     <div className="dialog-actions">
       <Button variant="secondary" onClick={close} disabled={busy} data-initial-focus>Cancel</Button>
       {type === 'removeEvent' && !item.date && <Button variant="secondary" onClick={() => execute(true)} disabled={busy}>Just this class</Button>}
