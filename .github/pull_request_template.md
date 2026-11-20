@@ -1,5 +1,5 @@
 ## Ticket
-P1-12 · FR-DASH-001, FR-DASH-002, FR-DASH-003, FR-DASH-014
+<ticket-id> · <FR IDs>
 
 ## What changed
 <short, factual>
@@ -22,4 +22,6 @@ P1-12 · FR-DASH-001, FR-DASH-002, FR-DASH-003, FR-DASH-014
 - [ ] No secrets, no PII in logs, analytics events in the dictionary only
 - [ ] Docs/ADR/status updated
 ## Security checklist (auth, RLS, storage, AI prompts, deletion touched?)
-- [ ] Ownership checks + RLS tests  - [ ] Signed URLs only  - [ ] Prompt-injection cases
+- [ ] Ownership checks + RLS tests
+- [ ] Signed URLs only
+- [ ] Prompt-injection cases

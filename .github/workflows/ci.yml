@@ -14,8 +14,9 @@ permissions:
 
 jobs:
   verify:
-    name: install / lint / typecheck / test / web build / licenses
+    name: install / lint / format / typecheck / test / web build / licenses
     runs-on: ubuntu-24.04 # pinned: ubuntu-latest (26.04) broke Playwright installs on PR #1
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
@@ -29,6 +30,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Lint
         run: pnpm lint
+      - name: Format check
+        run: pnpm format:check
       - name: Typecheck
         run: pnpm typecheck
       - name: Test
@@ -41,6 +44,7 @@ jobs:
   gitleaks:
     name: secret scan
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: read
@@ -51,11 +55,22 @@ jobs:
       - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: false
 
-  osv-scanner:
-    name: dependency CVE scan
+  osv-scanner-pr:
+    name: dependency CVE scan (PR)
+    if: github.event_name == 'pull_request'
     permissions:
       contents: read
       actions: read
       security-events: write
     uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@32d3cd482bdadfb38b186c0ad1b031902d55d932 # v2.7.1
+
+  osv-scanner-main:
+    name: dependency CVE scan (main, full tree)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@32d3cd482bdadfb38b186c0ad1b031902d55d932 # v2.7.1
