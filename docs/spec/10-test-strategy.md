@@ -61,7 +61,7 @@ Weekly BYDAY with EXDATE; COUNT; UNTIL; "this and following" splits the series a
 with no duplicate or missing instance; DST zone (`America/New_York`) keeps 09:00 local across the
 transition; expansions are idempotent; ICS export passes an RFC 5545 validator.
 
-### 3.4 Planner (`03` M11 scheduler) — six golden scenarios
+### 3.4 Planner (`03` M11 scheduler) — seven golden scenarios
 | ID | Scenario | Must show |
 |---|---|---|
 | PS1 | One exam in 5 days, 6 topics, ample time | All topics covered; no shortfall |
@@ -70,7 +70,8 @@ transition; expansions are idempotent; ICS export passes an RFC 5545 validator.
 | PS4 | Class-heavy day with only 30-min gaps | 25-min minimum and 10-min class buffers respected |
 | PS5 | Replan after two skipped blocks | Past and pinned blocks unchanged; correct change summary |
 | PS6 | Late-night windows near quiet hours | Nothing in quiet hours; daily cap respected |
-Properties: determinism; no overlaps; cap; no block after due; shortfall iff capacity < demand.
+| PS7 | Exam at 20:00; study window 17:00–22:00 | Blocks fill 17:00–19:30 (latest end = exam − 30 min), the last one ending exactly at 19:30; no false shortfall |
+Properties: determinism; no overlaps; cap; no block ends after its item's latest end; shortfall iff capacity < demand.
 
 ### 3.5 Natural-language dates (tasks) — ≥ 60 phrases
 Must include: "tomorrow", "tmrw", "kal" (future context → tomorrow), "parso" (day after
@@ -119,7 +120,8 @@ synthetic notes): ≥ 40 files — 10 text PDFs, 5 scanned PDFs, 5 PPTX, 3 PPT, 
 PDF, ZIP bomb, polyglot (PDF + ZIP), 0-byte file, oversize file.
 **Gates:** ≥ 98% Ready/Partial (excluding designed-to-fail, which must fail with the correct
 error code); ≥ 40 search queries with gold doc + page → top-5 hit rate ≥ 0.90 (documents),
-≥ 0.95 (entities); deletion completeness 100% (every derived row and object gone).
+≥ 0.95 (entities); deletion: soft delete removes derived AI data at once and hides the document, restore within 30
+days reprocesses it, and after permanent purge completeness is 100% (every row and object gone).
 
 ## 7. AI evaluation gates
 
@@ -163,6 +165,7 @@ are logged; judge prompt changes go through lead review.
 | SY10 | Token expires while offline | App usable; on reconnect refresh + sync resume |
 | SY11 | Logout with pending changes | Warning; wipe only after confirmation |
 | SY12 | Device clock 2 days ahead | Converges; server clamps HLC physical time to server time + 60 s and logs skew |
+| SY13 | Fallback protocol only (`06` §6.4): T1 takes the lower seq and commits after T2 | A pull between the two commits never advances past T1; the next pull after T1 commits delivers it |
 
 ## 9. E2E flows
 **Mobile (Maestro):** E1 first run with recorded extraction → confirm → batch → catch-up → reveal

@@ -115,8 +115,8 @@ with structure, without exposing anyone's private data.
   a space. Member profile = display name, avatar, optional role (e.g. CR). No public profiles.
   Leaving removes membership; shared files stay unless the uploader removes them (stated at
   leave time).
-- **FR-COM-009 (P0) Eligibility.** Account required; 18+ or verified parental consent
-  (FR-SET-009); not available to guests.
+- **FR-COM-009 (P0) Eligibility.** Account required; 18+ only. Verified parental consent
+  (FR-SET-009) does not enable communities for minors; not available to guests.
 - **FR-COM-010 (P0) Anti-patterns.** No leaderboards, no attendance comparisons, no public feeds,
   no direct messages in v1.
 - **FR-COM-011 (P2, HUMAN-GATED) Institution-verified spaces.** Verification by institutional
@@ -309,7 +309,8 @@ Architecture in `06` §6.
 - **FR-SYNC-007 (P0, Ph1) Device migrations.** Versioned, forward-only, tested from every
   released schema version; never lose data; on failure, a recovery screen offers export.
 - **FR-SYNC-008 (P0, Ph2) Recently deleted.** 30-day bin for subjects, tasks, notes, documents
-  (document storage purged after 30 days).
+  (a document's derived AI data is removed at once; its original is purged after 30 days —
+  FR-KNO-011).
 - **FR-SYNC-009 (P1, Ph3) Device storage.** Show local database and cache size; clear cache.
 - **FR-SYNC-010 (P2) Background sync.** Best-effort OS background tasks.
 

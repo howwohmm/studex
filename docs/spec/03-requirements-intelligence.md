@@ -150,7 +150,7 @@ day mode suppresses only non-essential notifications (test).
   tasks or exams, scope change, user request. Recomputes the future only; completed, past and
   pinned blocks are frozen. Shows a change summary ("Moved Eigenvalues to Thu because Tue's
   block was skipped.").
-- **FR-PLN-005 (P0) Infeasibility honesty.** When demand exceeds capacity before a deadline:
+- **FR-PLN-005 (P0) Infeasibility honesty.** When demand exceeds capacity before an item's latest end (scheduler step 1):
   schedule by priority, state the shortfall ("Not enough time to cover 4 topics before DBMS IA-2
   — about 3 h short"), offer options (add time, widen windows, narrow scope). Never drop topics
   silently.
@@ -170,21 +170,22 @@ day mode suppresses only non-essential notifications (test).
 1. **Items.** Topic *t* in scope: remaining effort E = base(difficulty) × (1 − *m<sub>t</sub>*),
    base = easy 30 / medium 60 / hard 90 min (per-topic override allowed); drop items with
    E < 10. Open linked task: E = remaining estimate (default 60). Each item has due D (exam
-   start or task due) and importance I = (exam weightage ÷ 100, or task priority weight none
+   start or task due), latest end L (exam: D − 30 min, configurable; task: D; an all-day due date
+   means 23:00 local) and importance I = (exam weightage ÷ 100, or task priority weight none
    0.5 / low 0.75 / medium 1 / high 1.5) × (1 + weakness), weakness = 1 − *m<sub>t</sub>* (tasks 0).
-2. **Slots.** Free intervals (FR-PLN-001) from now (rounded up to 5 min) to max(D); discard slots
+2. **Slots.** Free intervals (FR-PLN-001) from now (rounded up to 5 min) to max(L); discard slots
    < 25 min; hold back 10% of each day's cap as buffer.
-3. **Fill.** Walk slots chronologically. In each slot pick, among items with remaining effort
-   and D > slot end, the max S = I ÷ (days until D + 1); ties → earlier D → lexically smaller
-   item id. Block = min(remaining E, preferred session (default 50), slot remaining, daily cap
-   remaining). Continue inside the slot while ≥ 25 min remain (5-min gap between blocks).
+3. **Fill.** Walk slots chronologically with a cursor. At the cursor pick, among items with
+   remaining effort and L ≥ cursor + 25 min, the max S = I ÷ (days until D + 1); ties → earlier D
+   → lexically smaller item id. Block = min(remaining E, preferred session (default 50), slot
+   remaining, daily cap remaining, L − cursor), so a block may end exactly at L but never after it. Continue inside the slot while ≥ 25 min remain (5-min gap between blocks).
 4. **Revision blocks** (FR-PLN-009) are inserted before step 3 as soft pins.
 5. **Output** blocks with reason codes. Identical inputs (including "now") → identical output.
-6. **Shortfall** = remaining effort of items whose D passes without full allocation → FR-PLN-005.
+6. **Shortfall** = remaining effort of items whose L passes without full allocation → FR-PLN-005.
 
 ### Acceptance criteria
-Golden plans for the six fixture scenarios (`10` §3.4) · properties: no overlap with classes,
-events or quiet hours; daily cap never exceeded; no block after its item's due; determinism;
+Golden plans for the seven fixture scenarios (`10` §3.4) · properties: no overlap with classes,
+events or quiet hours; daily cap never exceeded; no block ends after its item's latest end L; determinism;
 replans never alter completed, pinned or past blocks; shortfall reported if and only if capacity
 < demand.
 

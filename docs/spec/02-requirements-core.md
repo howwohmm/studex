@@ -118,7 +118,8 @@ prompt, syllabus upload.
   yesterday, holidays excluded, contact hours excluded) and editable; "You attended" stepper
   defaulting to held. Copy: "Rough numbers are fine — you can fix them later." and "Not sure?
   Round down." "Start from today" sets baselines to 0/0. CTA "Show my number". Validation:
-  0 ≤ attended ≤ held.
+  0 ≤ attended ≤ held. Commit sets each subject's baseline `asOf` to yesterday, so earlier days
+  are covered by these numbers and never double-counted (`05` §2).
 - **FR-ONB-007 (P0) Reveal.** Commit → Today with the overall % counting up from 0 (Reduce
   Motion: fade) and the verdict sentence. One-time tip on the first class row: tap to mark,
   swipe right = Attended, swipe left = Bunked.
@@ -348,11 +349,13 @@ match the student's gut and show their work.
   marked, default), units per class kind (default 1), Excused policy (off by default; when on:
   on-duty counts as attended, medical is excluded; both configurable).
 - **FR-ATT-002 (P0) Baselines.** Per subject prior attended/held units from catch-up, CSV or
-  reconciliation, with change history; 0 ≤ attended ≤ held.
+  reconciliation, with change history; 0 ≤ attended ≤ held. Each baseline has a coverage date
+  `asOf`: marks on or before it are ignored and those days cannot be marked (`05` §2). Editing the
+  baseline is how earlier days are corrected.
 - **FR-ATT-003 (P0) Marking.** States: Unmarked (no record), Attended, Bunked, Cancelled, and
   Excused (if enabled; kind on-duty / medical / other). Exactly one current mark per occurrence;
   re-marking replaces; unmarking returns to Unmarked. Sources: Today row, subject ledger,
-  calendar day sheet (backfill), widget, notification action, end-of-day sweep, CSV import.
+  calendar day sheet (backfill, only for dates after the baseline `asOf`), widget, notification action, end-of-day sweep, CSV import.
 - **FR-ATT-004 (P0) Standings.** Per subject and overall exactly per `05`. Overall = aggregate
   units, never a mean of percentages. Raw counts are always one tap away.
 - **FR-ATT-005 (P0) Sentences.** Budget and recovery sentences per `05` §6 (locked copy) on the
@@ -378,13 +381,14 @@ match the student's gut and show their work.
   > draft's "no attendance record for a class" alert is the end-of-day summary (FR-NTF-003).
 - **FR-ATT-012 (P0) CSV import/export.** Columns `date,subject_code,subject_name,status,units,slot_start`;
   status ∈ attended | bunked | cancelled | excused (aliases: present → attended, absent →
-  bunked); preview with row-level errors before commit; atomic import; export includes baselines
+  bunked); preview with row-level errors before commit (rows dated on or before the baseline `asOf` are
+  rejected: "Covered by your catch-up numbers"); atomic import; export includes baselines
   and marks.
 - **FR-ATT-013 (P1, Ph2) Checkpoints.** User-defined cut-off dates ("IA-1 attendance check, 15
   Sep") → standing as of the checkpoint and forecast to it.
 - **FR-ATT-014 (P2, Ph4) Portal reconciliation.** Import a screenshot of the college portal's
   attendance page → M17 extraction → side-by-side "Portal 34/42 · Studex 33/41" per subject →
-  adjust baseline in one tap (audit-logged). Never ask for or store portal credentials.
+  adjust the baseline in one tap, moving its `asOf` to the screenshot date (audit-logged). Never ask for or store portal credentials.
 - **FR-ATT-015 (P0) Recovered toast.** Fires once when a subject or overall crosses up through
   the threshold because of a mark (never because of a settings change).
 
@@ -483,10 +487,15 @@ tutor, exam intelligence and planner.
 - **FR-KNO-010 (P0) Duplicates.** Exact (sha256): "Already in your library (added 12 Sep) — open
   it / keep both". Near-duplicates (P2, text-shingle similarity ≥ 0.9): suggestion only. Never
   auto-delete.
-- **FR-KNO-011 (P0) Deletion.** Removes original, renditions, extracted text, chunks,
-  embeddings, index entries, thumbnails and AI caches derived from it. Tutor citations render
-  "Source deleted". Notes keep their quoted text but lose the link. Storage freed within 24 h.
-  An audit event without content is retained.
+- **FR-KNO-011 (P0) Deletion.** Two stages. **Delete** moves the document to "Recently
+  deleted" (FR-SYNC-008): it disappears at once from the library, search, tutor retrieval and
+  sync views; its derived AI data (extracted text, chunks, embeddings, index entries, AI caches)
+  is removed immediately and rebuilt by reprocessing if the user restores it within 30 days; the
+  original, rendition and thumbnails are kept for those 30 days and do not count toward the
+  quota. **Permanent erasure** happens after 30 days, on "Delete permanently", or on account
+  deletion: every remaining artifact is purged within 24 h. Tutor citations render "Source
+  deleted"; notes keep their quoted text but lose the link. An audit event without content is
+  retained.
 - **FR-KNO-012 (P0) Upload progress.** Resumable chunked uploads (TUS-compatible) that survive
   backgrounding and flaky networks; multi-file queue with per-file progress, pause, retry and
   cancel; a completion notification only when processing took > 30 s and the app is backgrounded.

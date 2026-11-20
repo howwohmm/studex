@@ -132,8 +132,8 @@ national/state/institution, region, year, entries jsonb, verified) · `grade_sca
 |---|---|
 | `terms` | id, user_id, label, academic_year, start_date, end_date, timezone, schedule_mode (weekly / day_order), cycle_length, working_weekdays smallint[], attendance_policy jsonb (`05` §2), gpa_policy jsonb, selected_batch, status (active / archived), institution_id, program_id |
 | `term_holidays` · `term_breaks` · `day_order_overrides` | date + name + source · starts_on, ends_on, label · date, order |
-| `subjects` | id, user_id, term_id, name, short_name, code, color, kind, credits, faculty text[], description, policy_override jsonb, baseline_attended, baseline_held, counts_in_overall, catalog_course_id, archived_at |
-| `baseline_history` | subject_id, attended, held, source, created_at (append-only) |
+| `subjects` | id, user_id, term_id, name, short_name, code, color, kind, credits, faculty text[], description, policy_override jsonb, baseline_attended, baseline_held, baseline_as_of, counts_in_overall, catalog_course_id, archived_at |
+| `baseline_history` | subject_id, attended, held, as_of, source, created_at (append-only) |
 | `class_slots` | id, user_id, term_id, subject_id, kind, weekday, day_order, week_parity, start_minute, end_minute, room, faculty, batch, units, valid_from, valid_until, source |
 | `slot_exceptions` | id, user_id, term_id, slot_id, date, kind (cancel / move / room / extra), subject_id (extra), start_minute, end_minute, room, units |
 | `attendance_marks` | id, user_id, term_id, subject_id, **occurrence_key**, local_date, slot_id, status, excused_kind, units, source, marked_at, hlc, deleted_at · **UNIQUE (user_id, occurrence_key)** |
@@ -252,10 +252,15 @@ drive the UI (no manual refetch); queries are indexed on `(term_id, local_date)`
 HLC = (physical ms, counter, node id), compared lexicographically; node id = device id.
 
 ### 6.4 Fallback protocol (only if S-1 rejects PowerSync)
-- `server_seq bigint` on every synced table, assigned from one sequence by trigger on insert and
-  update.
-- **Pull:** `GET /v1/sync/pull?cursor={seq}&limit=1000` → changed rows (including tombstones)
-  across synced tables for the caller, ordered by `server_seq`, plus `next_cursor`.
+- **Commit-safe change log.** Triggers on every synced table append to `change_log` (`user_id`,
+  `table_name`, `row_id`, `op`, `txid xid8 DEFAULT pg_current_xact_id()`, `seq bigint` from one
+  sequence). A sequence value alone does not give commit order: transaction A can take seq 101,
+  B can take 102 and commit first, and a cursor that advanced to 102 would skip 101 forever.
+- **Pull:** `GET /v1/sync/pull?cursor={txid}:{seq}&limit=1000` returns, in `(txid, seq)` order, the
+  caller's change-log entries with `(txid, seq) > cursor` **and**
+  `txid < pg_snapshot_xmin(pg_current_snapshot())` — only transactions older than every in-flight
+  one, so the cursor can never pass an uncommitted write — joined to current row state
+  (tombstones included), plus `next_cursor`.
 - **Push:** `POST /v1/sync/push` with `[{op_id, table, op: upsert|delete, row, changed_columns,
   hlc}]`; idempotent by `op_id`; same conflict policy as §6.3; response lists accepted/rejected ops.
 - Client outbox in SQLite; pull after every push and on app foreground and reconnect; tombstones
@@ -281,8 +286,10 @@ HLC = (physical ms, counter, node id), compared lexicographically; node id = dev
 5. **Isolation:** the worker has egress only to DB, Storage and the embedding API; LibreOffice
    runs as a separate process with a 60 s timeout and memory cap; temp files are wiped; PDF
    JavaScript is never executed (pdf.js runs with scripting disabled; renditions are re-rendered).
-6. **Deletion:** a `doc_delete` job removes storage objects, pages, chunks, annotations' links,
-   caches; verified by a post-delete query (FR-KNO-011).
+6. **Deletion (FR-KNO-011):** `doc_soft_delete` removes pages, chunks, embeddings, index entries
+   and caches at once and hides the document; `doc_purge` (after 30 days, on "Delete
+   permanently", or on account deletion) removes storage objects and remaining rows within 24 h,
+   verified by a post-purge query. Restoring within 30 days re-enqueues `doc_process`.
 
 ## 8. AI architecture (`packages/ai`)
 

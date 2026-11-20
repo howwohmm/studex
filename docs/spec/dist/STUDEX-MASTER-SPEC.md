@@ -734,7 +734,8 @@ prompt, syllabus upload.
   yesterday, holidays excluded, contact hours excluded) and editable; "You attended" stepper
   defaulting to held. Copy: "Rough numbers are fine — you can fix them later." and "Not sure?
   Round down." "Start from today" sets baselines to 0/0. CTA "Show my number". Validation:
-  0 ≤ attended ≤ held.
+  0 ≤ attended ≤ held. Commit sets each subject's baseline `asOf` to yesterday, so earlier days
+  are covered by these numbers and never double-counted (`05` §2).
 - **FR-ONB-007 (P0) Reveal.** Commit → Today with the overall % counting up from 0 (Reduce
   Motion: fade) and the verdict sentence. One-time tip on the first class row: tap to mark,
   swipe right = Attended, swipe left = Bunked.
@@ -964,11 +965,13 @@ match the student's gut and show their work.
   marked, default), units per class kind (default 1), Excused policy (off by default; when on:
   on-duty counts as attended, medical is excluded; both configurable).
 - **FR-ATT-002 (P0) Baselines.** Per subject prior attended/held units from catch-up, CSV or
-  reconciliation, with change history; 0 ≤ attended ≤ held.
+  reconciliation, with change history; 0 ≤ attended ≤ held. Each baseline has a coverage date
+  `asOf`: marks on or before it are ignored and those days cannot be marked (`05` §2). Editing the
+  baseline is how earlier days are corrected.
 - **FR-ATT-003 (P0) Marking.** States: Unmarked (no record), Attended, Bunked, Cancelled, and
   Excused (if enabled; kind on-duty / medical / other). Exactly one current mark per occurrence;
   re-marking replaces; unmarking returns to Unmarked. Sources: Today row, subject ledger,
-  calendar day sheet (backfill), widget, notification action, end-of-day sweep, CSV import.
+  calendar day sheet (backfill, only for dates after the baseline `asOf`), widget, notification action, end-of-day sweep, CSV import.
 - **FR-ATT-004 (P0) Standings.** Per subject and overall exactly per `05`. Overall = aggregate
   units, never a mean of percentages. Raw counts are always one tap away.
 - **FR-ATT-005 (P0) Sentences.** Budget and recovery sentences per `05` §6 (locked copy) on the
@@ -994,13 +997,14 @@ match the student's gut and show their work.
   > draft's "no attendance record for a class" alert is the end-of-day summary (FR-NTF-003).
 - **FR-ATT-012 (P0) CSV import/export.** Columns `date,subject_code,subject_name,status,units,slot_start`;
   status ∈ attended | bunked | cancelled | excused (aliases: present → attended, absent →
-  bunked); preview with row-level errors before commit; atomic import; export includes baselines
+  bunked); preview with row-level errors before commit (rows dated on or before the baseline `asOf` are
+  rejected: "Covered by your catch-up numbers"); atomic import; export includes baselines
   and marks.
 - **FR-ATT-013 (P1, Ph2) Checkpoints.** User-defined cut-off dates ("IA-1 attendance check, 15
   Sep") → standing as of the checkpoint and forecast to it.
 - **FR-ATT-014 (P2, Ph4) Portal reconciliation.** Import a screenshot of the college portal's
   attendance page → M17 extraction → side-by-side "Portal 34/42 · Studex 33/41" per subject →
-  adjust baseline in one tap (audit-logged). Never ask for or store portal credentials.
+  adjust the baseline in one tap, moving its `asOf` to the screenshot date (audit-logged). Never ask for or store portal credentials.
 - **FR-ATT-015 (P0) Recovered toast.** Fires once when a subject or overall crosses up through
   the threshold because of a mark (never because of a settings change).
 
@@ -1099,10 +1103,15 @@ tutor, exam intelligence and planner.
 - **FR-KNO-010 (P0) Duplicates.** Exact (sha256): "Already in your library (added 12 Sep) — open
   it / keep both". Near-duplicates (P2, text-shingle similarity ≥ 0.9): suggestion only. Never
   auto-delete.
-- **FR-KNO-011 (P0) Deletion.** Removes original, renditions, extracted text, chunks,
-  embeddings, index entries, thumbnails and AI caches derived from it. Tutor citations render
-  "Source deleted". Notes keep their quoted text but lose the link. Storage freed within 24 h.
-  An audit event without content is retained.
+- **FR-KNO-011 (P0) Deletion.** Two stages. **Delete** moves the document to "Recently
+  deleted" (FR-SYNC-008): it disappears at once from the library, search, tutor retrieval and
+  sync views; its derived AI data (extracted text, chunks, embeddings, index entries, AI caches)
+  is removed immediately and rebuilt by reprocessing if the user restores it within 30 days; the
+  original, rendition and thumbnails are kept for those 30 days and do not count toward the
+  quota. **Permanent erasure** happens after 30 days, on "Delete permanently", or on account
+  deletion: every remaining artifact is purged within 24 h. Tutor citations render "Source
+  deleted"; notes keep their quoted text but lose the link. An audit event without content is
+  retained.
 - **FR-KNO-012 (P0) Upload progress.** Resumable chunked uploads (TUS-compatible) that survive
   backgrounding and flaky networks; multi-file queue with per-file progress, pause, retry and
   cancel; a completion notification only when processing took > 30 s and the app is backgrounded.
@@ -1280,7 +1289,7 @@ day mode suppresses only non-essential notifications (test).
   tasks or exams, scope change, user request. Recomputes the future only; completed, past and
   pinned blocks are frozen. Shows a change summary ("Moved Eigenvalues to Thu because Tue's
   block was skipped.").
-- **FR-PLN-005 (P0) Infeasibility honesty.** When demand exceeds capacity before a deadline:
+- **FR-PLN-005 (P0) Infeasibility honesty.** When demand exceeds capacity before an item's latest end (scheduler step 1):
   schedule by priority, state the shortfall ("Not enough time to cover 4 topics before DBMS IA-2
   — about 3 h short"), offer options (add time, widen windows, narrow scope). Never drop topics
   silently.
@@ -1300,21 +1309,22 @@ day mode suppresses only non-essential notifications (test).
 1. **Items.** Topic *t* in scope: remaining effort E = base(difficulty) × (1 − *m<sub>t</sub>*),
    base = easy 30 / medium 60 / hard 90 min (per-topic override allowed); drop items with
    E < 10. Open linked task: E = remaining estimate (default 60). Each item has due D (exam
-   start or task due) and importance I = (exam weightage ÷ 100, or task priority weight none
+   start or task due), latest end L (exam: D − 30 min, configurable; task: D; an all-day due date
+   means 23:00 local) and importance I = (exam weightage ÷ 100, or task priority weight none
    0.5 / low 0.75 / medium 1 / high 1.5) × (1 + weakness), weakness = 1 − *m<sub>t</sub>* (tasks 0).
-2. **Slots.** Free intervals (FR-PLN-001) from now (rounded up to 5 min) to max(D); discard slots
+2. **Slots.** Free intervals (FR-PLN-001) from now (rounded up to 5 min) to max(L); discard slots
    < 25 min; hold back 10% of each day's cap as buffer.
-3. **Fill.** Walk slots chronologically. In each slot pick, among items with remaining effort
-   and D > slot end, the max S = I ÷ (days until D + 1); ties → earlier D → lexically smaller
-   item id. Block = min(remaining E, preferred session (default 50), slot remaining, daily cap
-   remaining). Continue inside the slot while ≥ 25 min remain (5-min gap between blocks).
+3. **Fill.** Walk slots chronologically with a cursor. At the cursor pick, among items with
+   remaining effort and L ≥ cursor + 25 min, the max S = I ÷ (days until D + 1); ties → earlier D
+   → lexically smaller item id. Block = min(remaining E, preferred session (default 50), slot
+   remaining, daily cap remaining, L − cursor), so a block may end exactly at L but never after it. Continue inside the slot while ≥ 25 min remain (5-min gap between blocks).
 4. **Revision blocks** (FR-PLN-009) are inserted before step 3 as soft pins.
 5. **Output** blocks with reason codes. Identical inputs (including "now") → identical output.
-6. **Shortfall** = remaining effort of items whose D passes without full allocation → FR-PLN-005.
+6. **Shortfall** = remaining effort of items whose L passes without full allocation → FR-PLN-005.
 
 ### Acceptance criteria
-Golden plans for the six fixture scenarios (`10` §3.4) · properties: no overlap with classes,
-events or quiet hours; daily cap never exceeded; no block after its item's due; determinism;
+Golden plans for the seven fixture scenarios (`10` §3.4) · properties: no overlap with classes,
+events or quiet hours; daily cap never exceeded; no block ends after its item's latest end L; determinism;
 replans never alter completed, pinned or past blocks; shortfall reported if and only if capacity
 < demand.
 
@@ -1612,8 +1622,8 @@ with structure, without exposing anyone's private data.
   a space. Member profile = display name, avatar, optional role (e.g. CR). No public profiles.
   Leaving removes membership; shared files stay unless the uploader removes them (stated at
   leave time).
-- **FR-COM-009 (P0) Eligibility.** Account required; 18+ or verified parental consent
-  (FR-SET-009); not available to guests.
+- **FR-COM-009 (P0) Eligibility.** Account required; 18+ only. Verified parental consent
+  (FR-SET-009) does not enable communities for minors; not available to guests.
 - **FR-COM-010 (P0) Anti-patterns.** No leaderboards, no attendance comparisons, no public feeds,
   no direct messages in v1.
 - **FR-COM-011 (P2, HUMAN-GATED) Institution-verified spaces.** Verification by institutional
@@ -1806,7 +1816,8 @@ Architecture in `06` §6.
 - **FR-SYNC-007 (P0, Ph1) Device migrations.** Versioned, forward-only, tested from every
   released schema version; never lose data; on failure, a recovery screen offers export.
 - **FR-SYNC-008 (P0, Ph2) Recently deleted.** 30-day bin for subjects, tasks, notes, documents
-  (document storage purged after 30 days).
+  (a document's derived AI data is removed at once; its original is purged after 30 days —
+  FR-KNO-011).
 - **FR-SYNC-009 (P1, Ph3) Device storage.** Show local database and cache size; clear cache.
 - **FR-SYNC-010 (P2) Background sync.** Best-effort OS background tasks.
 
@@ -1848,7 +1859,11 @@ changes through a `spec:` PR.
   per-subject overrides. UI range 50–95% in steps of 1; API accepts 0–10,000.
 - **Units `u`** per occurrence: positive integer, default 1. A multi-period lab is **one**
   occurrence (v1 rule) unless the student sets lab units to the number of periods.
-- **Baseline** per subject: `(Ab, Hb)` with 0 ≤ Ab ≤ Hb (catch-up, CSV, reconciliation).
+- **Baseline** per subject: `(Ab, Hb)` with 0 ≤ Ab ≤ Hb (catch-up, CSV, reconciliation) and a
+  coverage date `asOf` (inclusive): the baseline already counts every occurrence from term start
+  through `asOf`. Catch-up sets `asOf` to the day before the onboarding commit (also for "Start
+  from today", with 0/0); a subject created later gets the day before its creation;
+  reconciliation (FR-ATT-014) moves it to the screenshot date.
 - **Policy:** `rounding ∈ {exact, half_up_integer}`, `basis ∈ {per_subject, overall, both}`,
   `excused` mapping (or disabled), contact-hour handling.
 
@@ -1867,8 +1882,11 @@ changes through a `spec:` PR.
 Contact hours: excluded from forward counts and unmarked by default; once marked they contribute
 like any class.
 
-**Tally:** `A = Ab + Σ attended`, `H = Hb + Σ held` over the subject's marks. Invariant
-0 ≤ A ≤ H (violations are data errors → reject the write).
+**Tally:** `A = Ab + Σ attended`, `H = Hb + Σ held` over the subject's marks **dated after
+`asOf`**. Marks dated on or before `asOf` are ignored: the baseline already contains those days,
+and counting them again would double-count (a 30/40 baseline plus a Bunked mark for a covered day
+must stay 30/40, not become 30/41). Invariant 0 ≤ A ≤ H (violations are data errors → reject the
+write).
 **Overall tally:** `A_o = Σ A_s`, `H_o = Σ H_s` over the term's active subjects with
 `counts_in_overall = true` (default true; audit courses may be excluded). **Never** average
 subject percentages: subjects (18/20, 1/5) are 19/25 = 76% overall, not 55%.
@@ -1890,7 +1908,9 @@ subject percentages: subjects (18/20, 1/5) are 19/25 = 76% overall, not 55%.
 - `R` = number of upcoming occurrences (and `R_u` = their total units). If the term has no end
   date, `R` is unknown: no caps apply and term-end forecasts are hidden ("Add your last day to see
   semester forecasts").
-- Past occurrences without a mark are excluded from A, H and R and surface as "unresolved".
+- Past occurrences dated after the baseline `asOf` without a mark are excluded from A, H and R
+  and surface as "unresolved". Occurrences on or before `asOf` are covered by the baseline: never
+  unresolved and never markable ("Covered by your catch-up numbers — edit those instead").
 
 ## 4. Eligibility predicate
 
@@ -1964,18 +1984,29 @@ unreachable → §6.4.
 
 Plural forms are handled in `packages/copy` (ICU MessageFormat); "1 more" stays grammatical.
 
-### 6.7 Today header when eligibility is per subject (default basis)
-The overall percentage is always the aggregate tally (status). The sentence must still be true
-for every subject:
+### 6.7 Composition across subjects: the three eligibility bases
+Each subject is judged against its own threshold (the term threshold or its override); the
+**aggregate** is judged against the term threshold on the overall tally. The big percentage on
+Today is always the aggregate (status). Every sentence must stay true for every constraint the
+basis imposes.
 
-- `basis = overall` → header uses the aggregate tally with the §6.6 sentences.
-- `basis = per_subject` or `both`:
-  - every subject eligible and Σₛ kₛ ≥ 1 → ABOVE sentence with **k = Σₛ kₛ** (the total bunks
-    possible while every subject stays eligible; the per-row chips show where each can be spent);
-  - every subject eligible and Σₛ kₛ = 0 → CLOSE sentence;
-  - any subject not eligible → **new copy (needs Ohm's approval)**: one subject: "You're at {p}%
-    overall. {subject} needs the next {n} to reach {T}%." · several: "You're at {p}% overall. {m}
-    subjects need classes to reach {T}%." Tapping opens the breakdown sheet.
+| Basis | Eligible means | Subject safe-now kₛ | Header total k |
+|---|---|---|---|
+| `per_subject` (default) | every subject eligible | simulate bunking the subject's next classes; stop when the subject fails its own threshold | k = Σₛ kₛ |
+| `overall` | aggregate eligible | not shown per subject | aggregate safe-now over the merged chronological upcoming sequence |
+| `both` | every subject eligible **and** the aggregate eligible | simulate bunking the subject's next classes; stop when the subject **or the aggregate** fails | largest count of upcoming occurrences, at most the per-subject kₛ from each subject, smallest units first, whose units fit the aggregate unit budget U_o = floor((10,000·A_o − T·H_o) / T); with all units 1, k = min(Σₛ kₛ, U_o) |
+
+Header sentence, in precedence order:
+1. `overall` or `both`, aggregate not eligible → the locked BELOW sentence with the aggregate
+   recovery n.
+2. `per_subject` or `both`, one or more subjects not eligible → **new copy (needs Ohm's
+   approval)**: one subject: "You're at {p}% overall. {subject} needs the next {n} to reach {T}%."
+   · several: "You're at {p}% overall. {m} subjects need classes to reach {T}%." Tap → breakdown
+   sheet.
+3. Otherwise ABOVE with the header total k when k ≥ 1, else CLOSE. The per-row chips show where
+   the bunks can be spent.
+
+Regression G18 (an override under `both`) is in §8.
 
 ### 6.8 Bunk planner and simulator
 Pure functions over a proposed sequence of statuses (e.g. all occurrences on a chosen date marked
@@ -1989,7 +2020,7 @@ subject and overall. No side effects.
 - Future occurrences may only be marked **Cancelled** (known cancellations remove them from R).
 - Marks always count by their status even if the schedule later changes (slot deleted, holiday
   declared and the user chose "keep"). Orphaned marks stay visible in the ledger.
-- Backfill is allowed for any past date in the term.
+- Backfill is allowed for any past date after the subject's baseline `asOf` (§2).
 - **Recovered toast** fires when a mark (not a settings, baseline or policy edit) flips a subject
   or the overall tally from not eligible to eligible.
 
@@ -2016,6 +2047,9 @@ T = 7,500 unless stated; all units 1 unless stated; policy `exact` unless stated
 | G14 | marks: 8 attended, 2 bunked, 1 excused on-duty (`present`) | → A 9, H 11 | 7500 | — | 81 / 81.8 | yes | — | — | — | — |
 | G15 | any tally + any number of Cancelled marks or unmarked occurrences | unchanged | | | unchanged | unchanged | | | | invariance |
 | G16 | unmarked contact hour → (0, 0); marked attended contact hour → (1, 1) | | | | | | | | | contact-hour rule |
+| G17a | baseline 30/40 with asOf 2026-11-19, plus a Bunked mark dated 2026-11-19 | → A 30, H 40 | 7500 | — | 75 / 75.0 | yes | — | — | — | covered mark ignored (no double count) |
+| G17b | same baseline, plus a Bunked mark dated 2026-11-20 | → A 30, H 41 | 7500 | — | 73 / 73.1 | no | 0 | 3 | — | BELOW |
+| G18 | basis `both`; term T 7500; subject A 50/100 with override T 5000; subject B 100/100 at T 7500 | aggregate 150/200 | 7500 | ≥ 40 each | overall 75 | every subject and the aggregate eligible | per subject: A 0, B 33; under `both`: B 0 (one B bunk → aggregate 150/201) | — | — | header total min(33, U_o = 0) = 0 → CLOSE "You're at 75%. One bunk puts you under 75%." (`per_subject` alone would wrongly offer 33) |
 
 ## 9. v1.0 defects not to carry over
 
@@ -2035,7 +2069,7 @@ that encode D1–D6.
 
 ```ts
 export type BasisPoints = number;            // integer 0..10_000
-export type Units = number;                  // positive integer
+export type Units = number;                  // positive safe integer
 export type MarkStatus = 'attended' | 'bunked' | 'cancelled' | 'excused';
 export type ExcusedKind = 'on_duty' | 'medical' | 'other';
 export type ExcusedMapping = 'present' | 'excluded' | 'absent';
@@ -2044,28 +2078,49 @@ export interface AttendancePolicy {
   thresholdBp: BasisPoints;
   rounding: 'exact' | 'half_up_integer';
   basis: 'per_subject' | 'overall' | 'both';
-  excused: Record<ExcusedKind, ExcusedMapping> | null;   // null = Excused disabled
+  excused: Record<ExcusedKind, ExcusedMapping> | null;   // null = Excused disabled; stray excused marks count as excluded
 }
-export interface Tally { attended: Units; held: Units }
-export interface Mark { occurrenceKey: string; status: MarkStatus; excusedKind?: ExcusedKind; units: Units }
+export interface Tally { attended: Units; held: Units }  // invariant 0 ≤ attended ≤ held
+export interface Baseline { attended: Units; held: Units; asOf: string | null } // asOf: YYYY-MM-DD, inclusive coverage (§2)
+export interface Mark { occurrenceKey: string; localDate: string /* YYYY-MM-DD */; status: MarkStatus; excusedKind?: ExcusedKind; units: Units }
 export interface UpcomingOccurrence { occurrenceKey: string; startsAt: string /* ISO instant */; units: Units; subjectId: string }
 
-export function tally(baseline: Tally, marks: readonly Mark[], policy: AttendancePolicy): Tally;
-export function isEligible(t: Tally, policy: AttendancePolicy): boolean | null;          // null when held = 0
-export function displayPercent(t: Tally, policy: AttendancePolicy, decimals: 0 | 1): string | null;
-export function safeNowBudget(t: Tally, upcoming: readonly UpcomingOccurrence[], policy: AttendancePolicy): number;
+/** Chronological upcoming occurrences; the caller has already removed contact hours and Cancelled ones. */
+export interface Horizon {
+  upcoming: readonly UpcomingOccurrence[];
+  /** true: `upcoming` is the complete remaining set through the term end (R = upcoming.length).
+   *  false: term end unknown — no caps, and once `upcoming` runs out the budgets continue with
+   *  virtual 1-unit classes. */
+  termEndKnown: boolean;
+}
+
+export function tally(baseline: Baseline, marks: readonly Mark[], policy: AttendancePolicy): Tally; // ignores marks dated ≤ asOf
+export function overallTally(subjects: readonly Tally[]): Tally;                                   // Σ/Σ, never a mean of %
+export function isEligible(t: Tally, policy: AttendancePolicy): boolean | null;                  // null when held = 0
+export function displayPercent(t: Tally, policy: AttendancePolicy, decimals: 0 | 1): string | null; // floored, integer math; null when held = 0
+export function safeNowBudget(t: Tally, h: Horizon, policy: AttendancePolicy): number | null;    // null when held = 0; Infinity only when T = 0 and term end unknown
 export type Recovery =
+  | { kind: 'not_started' }
   | { kind: 'eligible' }
   | { kind: 'recoverable'; n: number }
-  | { kind: 'unreachable'; maxReachableDisplay: string };
-export function recovery(t: Tally, upcoming: readonly UpcomingOccurrence[], policy: AttendancePolicy): Recovery;
-export interface TermEndForecast { remaining: number; maxSkippable: number; minToAttend: number; reachable: boolean; maxReachableDisplay: string }
-export function termEndForecast(t: Tally, upcoming: readonly UpcomingOccurrence[], policy: AttendancePolicy): TermEndForecast | null; // null when no term end
-export function copyBand(t: Tally, k: number, policy: AttendancePolicy): 'above' | 'close' | 'below' | 'not_started';
-export function colorBand(t: Tally, k: number, policy: AttendancePolicy): 'good' | 'close' | 'below' | 'not_started';
-export function simulate(t: Tally, sequence: readonly { units: Units; status: MarkStatus }[], policy: AttendancePolicy): Tally[];
+  | { kind: 'unreachable'; maxReachableDisplay: string | null };                                  // null when term end unknown
+export function recovery(t: Tally, h: Horizon, policy: AttendancePolicy): Recovery;
+export interface TermEndForecast {
+  remaining: number; remainingUnits: number;
+  maxSkippable: number; minToAttend: number;     // counts of occurrences; with mixed units, skip smallest units first
+  reachable: boolean; maxReachableDisplay: string; // floor(100·(A+R_u)/(H+R_u))
+}
+export function termEndForecast(t: Tally, h: Horizon, policy: AttendancePolicy): TermEndForecast | null; // null when term end unknown
+export function copyBand(t: Tally, k: number | null, policy: AttendancePolicy): 'above' | 'close' | 'below' | 'not_started';
+export function colorBand(t: Tally, k: number | null, policy: AttendancePolicy): 'good' | 'close' | 'below' | 'not_started';
+export function simulate(t: Tally, sequence: readonly { units: Units; status: MarkStatus; excusedKind?: ExcusedKind }[], policy: AttendancePolicy): Tally[];
 export const CLOSE_MARGIN_BP = 600;
 ```
+
+Invalid input (negative or non-integer numbers, unsafe integers, attended > held, threshold outside
+0–10,000) throws `RangeError` with a message starting `attendance:`. Under `half_up_integer`,
+`displayPercent` returns the college-rounded integer `P` regardless of `decimals`. The color band's
+"6 points above" test is the integer comparison `10,000·A ≥ (T + 600)·H`.
 
 Standing composition (`subjectStanding`, `overallStanding`, `todayHeader`) lives in the same
 package and returns structured data (band, numbers, copy key + params). Views render copy keys
@@ -2073,12 +2128,12 @@ via `packages/copy`; they never assemble attendance sentences themselves.
 
 ## 11. Required tests (in `packages/core`, run in CI on every PR)
 
-1. Every row of §8 as a named test.
+1. Every row of §8 as a named test (G1–G17 in P0-06; G18 with the standing composition in P1-03).
 2. Property tests (fast-check, ≥ 10,000 runs each): closed forms equal the simulation when u = 1
    and policy is exact; bunking never increases %, attending never decreases it; after k
    safe-now bunks the student is still eligible and after k + 1 is not (unless capped by R);
    recovery n is minimal; overall = Σ/Σ; the display guarantee in §5; Cancelled/unmarked
-   invariance; tally never yields A > H.
+   invariance; marks dated on or before `asOf` never change the tally; tally never yields A > H.
 3. Exhaustive boundary sweep: H ∈ [1, 300], A ∈ [0, H], T ∈ {5000, 6000, 6500, 6667, 7000,
    7500, 7550, 8000, 8500, 9000, 9500, 10000} → closed form == brute force (≈ 1M cases, < 10 s).
 4. Occurrence math (`10` §3.2): holidays, Saturday classes, day-order shifting with holidays and
@@ -2221,8 +2276,8 @@ national/state/institution, region, year, entries jsonb, verified) · `grade_sca
 |---|---|
 | `terms` | id, user_id, label, academic_year, start_date, end_date, timezone, schedule_mode (weekly / day_order), cycle_length, working_weekdays smallint[], attendance_policy jsonb (`05` §2), gpa_policy jsonb, selected_batch, status (active / archived), institution_id, program_id |
 | `term_holidays` · `term_breaks` · `day_order_overrides` | date + name + source · starts_on, ends_on, label · date, order |
-| `subjects` | id, user_id, term_id, name, short_name, code, color, kind, credits, faculty text[], description, policy_override jsonb, baseline_attended, baseline_held, counts_in_overall, catalog_course_id, archived_at |
-| `baseline_history` | subject_id, attended, held, source, created_at (append-only) |
+| `subjects` | id, user_id, term_id, name, short_name, code, color, kind, credits, faculty text[], description, policy_override jsonb, baseline_attended, baseline_held, baseline_as_of, counts_in_overall, catalog_course_id, archived_at |
+| `baseline_history` | subject_id, attended, held, as_of, source, created_at (append-only) |
 | `class_slots` | id, user_id, term_id, subject_id, kind, weekday, day_order, week_parity, start_minute, end_minute, room, faculty, batch, units, valid_from, valid_until, source |
 | `slot_exceptions` | id, user_id, term_id, slot_id, date, kind (cancel / move / room / extra), subject_id (extra), start_minute, end_minute, room, units |
 | `attendance_marks` | id, user_id, term_id, subject_id, **occurrence_key**, local_date, slot_id, status, excused_kind, units, source, marked_at, hlc, deleted_at · **UNIQUE (user_id, occurrence_key)** |
@@ -2341,10 +2396,15 @@ drive the UI (no manual refetch); queries are indexed on `(term_id, local_date)`
 HLC = (physical ms, counter, node id), compared lexicographically; node id = device id.
 
 ### 6.4 Fallback protocol (only if S-1 rejects PowerSync)
-- `server_seq bigint` on every synced table, assigned from one sequence by trigger on insert and
-  update.
-- **Pull:** `GET /v1/sync/pull?cursor={seq}&limit=1000` → changed rows (including tombstones)
-  across synced tables for the caller, ordered by `server_seq`, plus `next_cursor`.
+- **Commit-safe change log.** Triggers on every synced table append to `change_log` (`user_id`,
+  `table_name`, `row_id`, `op`, `txid xid8 DEFAULT pg_current_xact_id()`, `seq bigint` from one
+  sequence). A sequence value alone does not give commit order: transaction A can take seq 101,
+  B can take 102 and commit first, and a cursor that advanced to 102 would skip 101 forever.
+- **Pull:** `GET /v1/sync/pull?cursor={txid}:{seq}&limit=1000` returns, in `(txid, seq)` order, the
+  caller's change-log entries with `(txid, seq) > cursor` **and**
+  `txid < pg_snapshot_xmin(pg_current_snapshot())` — only transactions older than every in-flight
+  one, so the cursor can never pass an uncommitted write — joined to current row state
+  (tombstones included), plus `next_cursor`.
 - **Push:** `POST /v1/sync/push` with `[{op_id, table, op: upsert|delete, row, changed_columns,
   hlc}]`; idempotent by `op_id`; same conflict policy as §6.3; response lists accepted/rejected ops.
 - Client outbox in SQLite; pull after every push and on app foreground and reconnect; tombstones
@@ -2370,8 +2430,10 @@ HLC = (physical ms, counter, node id), compared lexicographically; node id = dev
 5. **Isolation:** the worker has egress only to DB, Storage and the embedding API; LibreOffice
    runs as a separate process with a 60 s timeout and memory cap; temp files are wiped; PDF
    JavaScript is never executed (pdf.js runs with scripting disabled; renditions are re-rendered).
-6. **Deletion:** a `doc_delete` job removes storage objects, pages, chunks, annotations' links,
-   caches; verified by a post-delete query (FR-KNO-011).
+6. **Deletion (FR-KNO-011):** `doc_soft_delete` removes pages, chunks, embeddings, index entries
+   and caches at once and hides the document; `doc_purge` (after 30 days, on "Delete
+   permanently", or on account deletion) removes storage objects and remaining rows within 24 h,
+   verified by a post-purge query. Restoring within 30 days re-enqueues `doc_process`.
 
 ## 8. AI architecture (`packages/ai`)
 
@@ -3158,7 +3220,7 @@ Weekly BYDAY with EXDATE; COUNT; UNTIL; "this and following" splits the series a
 with no duplicate or missing instance; DST zone (`America/New_York`) keeps 09:00 local across the
 transition; expansions are idempotent; ICS export passes an RFC 5545 validator.
 
-### 3.4 Planner (`03` M11 scheduler) — six golden scenarios
+### 3.4 Planner (`03` M11 scheduler) — seven golden scenarios
 | ID | Scenario | Must show |
 |---|---|---|
 | PS1 | One exam in 5 days, 6 topics, ample time | All topics covered; no shortfall |
@@ -3167,7 +3229,8 @@ transition; expansions are idempotent; ICS export passes an RFC 5545 validator.
 | PS4 | Class-heavy day with only 30-min gaps | 25-min minimum and 10-min class buffers respected |
 | PS5 | Replan after two skipped blocks | Past and pinned blocks unchanged; correct change summary |
 | PS6 | Late-night windows near quiet hours | Nothing in quiet hours; daily cap respected |
-Properties: determinism; no overlaps; cap; no block after due; shortfall iff capacity < demand.
+| PS7 | Exam at 20:00; study window 17:00–22:00 | Blocks fill 17:00–19:30 (latest end = exam − 30 min), the last one ending exactly at 19:30; no false shortfall |
+Properties: determinism; no overlaps; cap; no block ends after its item's latest end; shortfall iff capacity < demand.
 
 ### 3.5 Natural-language dates (tasks) — ≥ 60 phrases
 Must include: "tomorrow", "tmrw", "kal" (future context → tomorrow), "parso" (day after
@@ -3216,7 +3279,8 @@ synthetic notes): ≥ 40 files — 10 text PDFs, 5 scanned PDFs, 5 PPTX, 3 PPT, 
 PDF, ZIP bomb, polyglot (PDF + ZIP), 0-byte file, oversize file.
 **Gates:** ≥ 98% Ready/Partial (excluding designed-to-fail, which must fail with the correct
 error code); ≥ 40 search queries with gold doc + page → top-5 hit rate ≥ 0.90 (documents),
-≥ 0.95 (entities); deletion completeness 100% (every derived row and object gone).
+≥ 0.95 (entities); deletion: soft delete removes derived AI data at once and hides the document, restore within 30
+days reprocesses it, and after permanent purge completeness is 100% (every row and object gone).
 
 ## 7. AI evaluation gates
 
@@ -3260,6 +3324,7 @@ are logged; judge prompt changes go through lead review.
 | SY10 | Token expires while offline | App usable; on reconnect refresh + sync resume |
 | SY11 | Logout with pending changes | Warning; wipe only after confirmation |
 | SY12 | Device clock 2 days ahead | Converges; server clamps HLC physical time to server time + 60 s and logs skew |
+| SY13 | Fallback protocol only (`06` §6.4): T1 takes the lower seq and commits after T2 | A pull between the two commits never advances past T1; the next pull after T1 commits delivers it |
 
 ## 9. E2E flows
 **Mobile (Maestro):** E1 first run with recorded extraction → confirm → batch → catch-up → reveal
