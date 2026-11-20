@@ -7,6 +7,11 @@ import { ImportTimetable } from './import.jsx';
 import { attendanceColor, Badge, Button, DayLabel, Dialog, Empty, Field, SubjectOptions, Tile, TimeRange } from './ui.jsx';
 
 const replace = (list, item) => list.some((x) => x.id === item.id) ? list.map((x) => x.id === item.id ? item : x) : [...list, item];
+function updateSubject(state, id, update) {
+  const subject = state.subjects.find((entry) => entry.id === id);
+  if (!subject) throw new Error('This subject no longer exists.');
+  return { ...state, subjects: replace(state.subjects, update(subject)) };
+}
 const kindOptions = ['Class', 'Lecture', 'Lab', 'Tutorial', 'Seminar', 'Break'];
 const Titles = {
   subject: ['Add a subject', 'Edit subject'], event: ['Add a class', 'Edit class'],
@@ -62,10 +67,10 @@ function FormDialog({ action, state, today, apply, close, open }) {
       next = { ...state, profile: { name: get('name'), university: get('university'), program: get('program'), semester: get('semester'), termStart, termEnd, edited: true } };
     }
     if (type === 'notes' || type === 'unit') {
-      const updated = type === 'notes' ? { ...subject, notes: get('notes') } : { ...subject, units: replace(subject.units ?? [],
-        { id: item?.id || uid(), title: get('title'), topics: get('topics').split('\n').map((line) => line.trim()).filter(Boolean) }) };
+      const update = type === 'notes' ? (latest) => ({ ...latest, notes: get('notes') }) : (latest) => ({ ...latest, units: replace(latest.units ?? [],
+        { id: item?.id || uid(), title: get('title'), topics: get('topics').split('\n').map((line) => line.trim()).filter(Boolean) }) });
       if (type === 'unit' && !get('title')) { setError('Enter a name for this unit.'); return; }
-      next = { ...state, subjects: replace(state.subjects, updated) };
+      next = (current) => updateSubject(current, subject.id, update);
     }
     if (type === 'subject') {
       const title = get('title'), code = get('code');
@@ -73,11 +78,14 @@ function FormDialog({ action, state, today, apply, close, open }) {
       const threshold = +get('threshold');
       if (!title) { setError('Enter a subject name.'); return; }
       if (baselinePresent > baselineHeld) { setError('Attended classes can’t be more than classes held.'); return; }
-      if (state.subjects.some((s) => s.id !== item?.id && !s.archived && (s.title.toLowerCase() === title.toLowerCase() || (code && s.code?.toLowerCase() === code.toLowerCase())))) {
-        setError('An active subject already uses that name or code.'); return;
-      }
-      next = { ...state, subjects: replace(state.subjects, { ...item, id: item?.id || uid(), title, code,
-        baselinePresent, baselineHeld, threshold, description: get('description'), color: get('color'), archived: form.has('archived') }) };
+      const fields = { id: item?.id || uid(), title, code, baselinePresent, baselineHeld, threshold,
+        description: get('description'), color: get('color'), archived: form.has('archived') };
+      next = (current) => {
+        if (current.subjects.some((s) => s.id !== item?.id && !s.archived && (s.title.toLowerCase() === title.toLowerCase() || (code && s.code?.toLowerCase() === code.toLowerCase())))) {
+          throw new Error('An active subject already uses that name or code.');
+        }
+        return item ? updateSubject(current, item.id, (latest) => ({ ...latest, ...fields })) : { ...current, subjects: [...current.subjects, fields] };
+      };
       notice = item ? 'Subject updated.' : 'Subject added.';
     }
     if (type === 'event') {
@@ -119,7 +127,8 @@ function FormDialog({ action, state, today, apply, close, open }) {
       catch (err) { setError(err.message); }
       return;
     }
-    apply(next, notice);
+    try { apply(next, notice); }
+    catch (err) { setError(err.message); }
   }
   return <Dialog title={Titles[type][Number(Boolean(item))]} close={close}>
     <form onSubmit={submit} onChange={() => { setOverride(null); setError(''); }}>
@@ -365,7 +374,9 @@ function ConfirmDialog({ action, state, today, apply, close, go }) {
       } else if (type === 'removeRecord') {
         apply((current) => ({ ...current, records: current.records.filter((record) => record.id !== item.id) }), 'Attendance mark removed.');
       } else if (type === 'removeUnit') {
-        apply({ ...state, subjects: replace(state.subjects, { ...subject, units: subject.units.filter((u) => u.id !== item.id) }) }, 'Unit deleted.');
+        apply((current) => updateSubject(current, subject.id, (latest) => ({ ...latest,
+          units: (latest.units ?? []).filter((u) => u.id !== item.id),
+        })), 'Unit deleted.');
       } else if (type === 'removeEvent') {
         apply({ ...state, events: single ? replace(state.events, { ...item, skipped: [...(item.skipped ?? []), date] })
           : state.events.filter((e) => e.id !== item.id) }, 'Class removed.');

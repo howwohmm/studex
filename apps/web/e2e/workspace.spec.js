@@ -227,6 +227,21 @@ test('workspace changes in another tab keep the open draft and restore keyboard 
   await expect(page.getByText('Workspace updated in another tab.')).toBeVisible();
 });
 
+test('saving a subject notes draft preserves units added in another tab', async ({ page, context }) => {
+  await page.goto('/#/subject/dsa');
+  await page.getByRole('button', { name: 'Edit notes' }).click();
+  await dialog(page).getByLabel('Subject notes').fill('Draft notes about sorting');
+  const other = await context.newPage();
+  await other.goto('/#/subject/dsa');
+  await other.getByRole('button', { name: 'Add unit' }).click();
+  await dialog(other).getByLabel('Unit name').fill('Dynamic programming');
+  await dialog(other).getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByText('Workspace updated in another tab.')).toBeVisible();
+  await dialog(page).getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByText('Draft notes about sorting')).toBeVisible();
+  await expect(page.getByText('Dynamic programming')).toBeVisible();
+});
+
 test('production workspace reloads and extracts PDF text offline after first load', async ({ page, context }) => {
   await page.goto('/#/library');
   await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
