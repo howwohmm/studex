@@ -5,7 +5,7 @@ create extension if not exists pgtap;
 
 -- plan: 1 catalog sweep + 4 excused + 4 cross-user rejects + 1 links
 --     + 2 cascade-delete + 4 support_messages = 16
-select plan(16);
+select plan(18);
 
 -- A second user who owns nothing.
 insert into auth.users (id, email, aud, role, encrypted_password, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data)
@@ -28,10 +28,15 @@ select is_empty(
   join pg_attribute pa on pa.attrelid = con.confrelid and pa.attname = 'user_id'
   where con.contype = 'f' and n.nspname = 'public'
     and con.conrelid <> con.confrelid
-    and not exists (
-      select 1 from unnest(con.confkey) k
-      join pg_attribute ra on ra.attrelid = con.confrelid and ra.attnum = k
-      where ra.attname = 'user_id')
+    and (
+      not exists (
+        select 1 from unnest(con.conkey) k
+        join pg_attribute ra on ra.attrelid = con.conrelid and ra.attnum = k
+        where ra.attname = 'user_id')
+      or not exists (
+        select 1 from unnest(con.confkey) k
+        join pg_attribute ra on ra.attrelid = con.confrelid and ra.attnum = k
+        where ra.attname = 'user_id'))
   $$,
   'every user-owned -> user-owned FK references (id, user_id)');
 
@@ -86,11 +91,17 @@ select throws_ok(
     values (gen_random_uuid(), '019b0000-0000-7000-8000-0000000000b2',
             '319b0000-0000-7000-8000-000000000001')$$,
   '23503', null, 'topics: cannot point at another user''s subject');
+reset role;
+insert into public.documents (id, user_id, title)
+values ('519b0000-0000-7000-8000-0000000000d1', '019b0000-0000-7000-8000-0000000000a1', 'A doc')
+on conflict (id) do nothing;
+set local role authenticated;
+set local request.jwt.claims to '{"sub": "019b0000-0000-7000-8000-0000000000b2", "role": "authenticated"}';
 select throws_ok(
   $$insert into public.annotations (id, user_id, document_id, page_no, kind)
     values (gen_random_uuid(), '019b0000-0000-7000-8000-0000000000b2',
-            gen_random_uuid(), 1, 'highlight')$$,
-  null, null, 'annotations: cross-user/missing document rejected');
+            '519b0000-0000-7000-8000-0000000000d1', 1, 'highlight')$$,
+  '23503', null, 'annotations: B cannot point at A''s document');
 
 -- links: source owned by A must be rejected under B's user_id
 reset role;
@@ -106,6 +117,12 @@ select throws_ok(
             'notes', '519b0000-0000-7000-8000-000000000009',
             'notes', '519b0000-0000-7000-8000-0000000000b2')$$,
   'P0001', null, 'links: cannot link to another user''s row');
+select throws_ok(
+  $$insert into public.links (id, user_id, source_type, source_id, target_type, target_id)
+    values (gen_random_uuid(), '019b0000-0000-7000-8000-0000000000b2',
+            'notes', '519b0000-0000-7000-8000-0000000000b2',
+            'notes', '519b0000-0000-7000-8000-000000000009')$$,
+  'P0001', null, 'links: own source + foreign target also rejected');
 
 -- ---------------------------------------------------------------------------
 -- Account deletion cascades marks and their audit events (as postgres).
@@ -157,6 +174,13 @@ select results_eq(
   $$select count(*)::int from public.support_messages where ticket_id = '719b0000-0000-7000-8000-00000000000a'$$,
   $$values (1)$$,
   'support_messages: owner cannot delete');
+
+reset role;
+select is_empty(
+  $$select 1 from public.support_messages sm
+    join public.support_tickets st on st.id = sm.ticket_id
+    where sm.user_id is distinct from st.user_id$$,
+  'support_messages.user_id is backfilled/derived from the ticket');
 
 select * from finish();
 rollback;

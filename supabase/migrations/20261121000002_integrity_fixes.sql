@@ -101,6 +101,14 @@ begin
   end loop;
 end $$;
 
+-- Events pointing at marks that no longer exist would abort the new FK;
+-- null them out first (the mark row is gone, only the audit shell remains).
+update public.attendance_events
+set mark_id = null
+where mark_id is not null
+  and not exists (
+    select 1 from public.attendance_marks m where m.id = mark_id);
+
 -- Re-point each child FK at (parent.id, parent.user_id). child_col null =>
 -- the composite FK is skipped, matching the old single-column semantics.
 do $$
@@ -137,10 +145,18 @@ begin
   end loop;
 end $$;
 
--- support_messages has no user_id column: add one, back-fill from the ticket
--- on insert, then apply the same composite ownership FK.
+-- support_messages has no user_id column: add one, back-fill existing rows
+-- from their ticket, then make it NOT NULL so the composite FK is total.
 alter table public.support_messages
   add column user_id uuid references auth.users (id) on delete cascade;
+
+update public.support_messages sm
+set user_id = st.user_id
+from public.support_tickets st
+where st.id = sm.ticket_id and sm.user_id is null;
+
+alter table public.support_messages
+  alter column user_id set not null;
 
 create or replace function public.support_messages_set_user()
 returns trigger
