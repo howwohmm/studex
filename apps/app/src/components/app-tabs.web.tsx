@@ -1,5 +1,6 @@
 import { Tabs, TabList, TabTrigger, TabSlot, type TabTriggerSlotProps } from 'expo-router/ui';
-import { useWindowDimensions, View, Pressable, StyleSheet, type ViewProps } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Pressable, StyleSheet, type ViewProps } from 'react-native';
 import { t, type CopyKey } from '@studex/copy';
 import { useTheme, Icon, Text, breakpoints, spacing, radii, type IconName } from '@studex/ui';
 
@@ -12,10 +13,18 @@ const TABS = [
 ] as const satisfies readonly { name: string; href: string; icon: IconName; label: CopyKey }[];
 
 export default function AppTabs() {
-  const { width } = useWindowDimensions();
-  const sidebar = width >= breakpoints.sidebar;
+  // useWindowDimensions hydrates with the SSR value in static exports and the
+  // layout never re-renders to match — read the real viewport via matchMedia.
+  const query = `(min-width:${breakpoints.sidebar}px)`;
+  const [sidebar, setSidebar] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mql = window.matchMedia(query);
+    const onChange = () => setSidebar(mql.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, [query]);
   return (
-    <Tabs style={sidebar ? { flexDirection: 'row-reverse' } : undefined}>
+    <Tabs style={[{ flex: 1, height: '100%' }, sidebar ? { flexDirection: 'row-reverse' } : null]}>
       <TabSlot style={{ flex: 1, height: '100%' }} />
       <TabList asChild>
         <TabBar sidebar={sidebar}>
@@ -39,6 +48,7 @@ function TabBar({
   return (
     <View
       {...props}
+      testID={sidebar ? 'tab-sidebar' : 'tab-bar'}
       style={[
         styles.bar,
         sidebar
@@ -76,7 +86,7 @@ function TabItem({
   ...props
 }: TabTriggerSlotProps & { tab: (typeof TABS)[number]; sidebar: boolean }) {
   const theme = useTheme();
-  const color = isFocused ? theme.accent : theme.label.secondary;
+  const color = isFocused ? theme.onAccent : theme.label.primary;
   return (
     <Pressable
       {...props}
@@ -92,9 +102,16 @@ function TabItem({
               paddingVertical: spacing[12],
               borderRadius: radii.md,
               marginHorizontal: spacing[8],
-              backgroundColor: isFocused ? theme.accentSoft : 'transparent',
+              backgroundColor: isFocused ? theme.accentSolid : 'transparent',
             }
-          : { alignItems: 'center', gap: 2, paddingVertical: 4 },
+          : {
+              alignItems: 'center',
+              gap: 2,
+              paddingVertical: 4,
+              borderRadius: radii.md,
+              marginHorizontal: spacing[8],
+              backgroundColor: isFocused ? theme.accentSolid : 'transparent',
+            },
       ]}
     >
       <Icon name={tab.icon} size={22} color={color} />

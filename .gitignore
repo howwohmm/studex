@@ -54,3 +54,4 @@ yarn-error.*
 # macOS / misc
 .DS_Store
 *.xcodeproj
+test-results/

@@ -1,4 +1,5 @@
 import { ScrollView, View, useColorScheme } from 'react-native';
+import Head from 'expo-router/head';
 import { useState } from 'react';
 import { useSharedValue } from 'react-native-reanimated';
 import {
@@ -140,16 +141,21 @@ function Gallery({ scheme }: { scheme: 'light' | 'dark' }) {
 export default function GalleryScreen() {
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
   return (
-    <ScrollView style={{ flex: 1 }}>
-      <Text variant="largeTitle" style={{ padding: 16 }}>
-        Gallery ({scheme})
-      </Text>
-      <ThemeProvider scheme={scheme}>
-        <Gallery scheme={scheme} />
-      </ThemeProvider>
-      <ThemeProvider scheme={scheme === 'dark' ? 'light' : 'dark'}>
-        <Gallery scheme={scheme === 'dark' ? 'light' : 'dark'} />
-      </ThemeProvider>
-    </ScrollView>
+    <>
+      <Head>
+        <title>Gallery — Studex</title>
+      </Head>
+      <ScrollView style={{ flex: 1 }}>
+        <Text variant="largeTitle" style={{ padding: 16 }}>
+          Gallery ({scheme})
+        </Text>
+        <ThemeProvider scheme={scheme}>
+          <Gallery scheme={scheme} />
+        </ThemeProvider>
+        <ThemeProvider scheme={scheme === 'dark' ? 'light' : 'dark'}>
+          <Gallery scheme={scheme === 'dark' ? 'light' : 'dark'} />
+        </ThemeProvider>
+      </ScrollView>
+    </>
   );
 }

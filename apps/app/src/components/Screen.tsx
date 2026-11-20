@@ -1,4 +1,5 @@
 import { ScrollView } from 'react-native';
+import Head from 'expo-router/head';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, Text, spacing } from '@studex/ui';
 import type { ReactNode } from 'react';
@@ -18,6 +19,9 @@ export function Screen({ title, children }: { title: string; children: ReactNode
       }}
       contentInsetAdjustmentBehavior="never"
     >
+      <Head>
+        <title>{title} — Studex</title>
+      </Head>
       <Text variant="largeTitle" accessibilityRole="header">
         {title}
       </Text>

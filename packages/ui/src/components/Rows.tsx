@@ -81,7 +81,7 @@ export function Chip({ label, color }: { label: string; color?: string }) {
 
 export function Badge({ label, color }: { label: string; color?: string }) {
   const theme = useTheme();
-  const c = color ?? theme.accent;
+  const c = color ?? theme.accentText;
   return (
     <View
       style={{

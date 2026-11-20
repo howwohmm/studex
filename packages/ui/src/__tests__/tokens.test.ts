@@ -49,6 +49,20 @@ describe('WCAG contrast (tokens)', () => {
     it(`${scheme} onAccent on accentSolid >= 4.5:1`, () => {
       expect(ratio(c.onAccent, c.accentSolid)).toBeGreaterThanOrEqual(4.5);
     });
+    it(`${scheme} accentText on accentSoft (over grouped) >= 4.5:1`, () => {
+      // badge text sits on accentSoft composited over bg.grouped
+      const soft = composite(c.accentSoft, c.bg.grouped);
+      const softHex =
+        '#' +
+        soft
+          .map((v) =>
+            Math.round(v * 255)
+              .toString(16)
+              .padStart(2, '0'),
+          )
+          .join('');
+      expect(ratio(c.accentText, softHex)).toBeGreaterThanOrEqual(4.5);
+    });
     it(`${scheme} gauge tick (label.secondary) on fill.control >= 3:1`, () => {
       // tick sits on the quiet track (fill.control composited over bg.grouped)
       const track = composite(c.fill.control, c.bg.grouped);

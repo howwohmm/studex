@@ -17,7 +17,8 @@
     "format:check": "prettier --check \"apps/**/*.{ts,tsx,js,jsx,json}\" \"packages/**/*.{ts,tsx,json}\" \"scripts/**/*.{js,mjs}\" \"*.{js,mjs,json,md}\"",
     "db:start": "supabase db start",
     "db:reset": "supabase db reset",
-    "db:test": "supabase test db"
+    "db:test": "supabase test db",
+    "e2e": "pnpm --filter @studex/app e2e"
   },
   "devDependencies": {
     "eslint": "~9.39.5",
