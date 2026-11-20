@@ -79,9 +79,10 @@ function App() {
     else window.scrollTo(0, 0);
   }
   function apply(next, message) {
+    const updated = typeof next === 'function' ? next(loadWorkspace() ?? state) : next;
     try {
-      saveWorkspace(next);
-      setState(next); setAction(null); setNote({ message });
+      saveWorkspace(updated);
+      setState(updated); setAction(null); setNote({ message });
       return true;
     } catch {
       setNote({ message: 'Could not save to this browser. Check available storage and try again.', error: true });

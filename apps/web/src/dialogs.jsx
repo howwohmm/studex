@@ -193,7 +193,18 @@ function UploadDialog({ action, state, today, apply, close }) {
         }
       }
       await putFile(details.id, file);
-      if (!apply({ ...state, files: [...state.files, details] }, 'Material uploaded.')) await deleteFile(details.id);
+      let saved = false;
+      try {
+        saved = apply((current) => {
+          if (current.files.some((item) => item.hash === hash)) throw new Error('This file is already in your library.');
+          if (details.subjectId && !current.subjects.some((subject) => subject.id === details.subjectId)) {
+            throw new Error('The selected subject no longer exists. Choose another subject.');
+          }
+          return { ...current, files: [...current.files, details] };
+        }, 'Material uploaded.');
+      } finally {
+        if (!saved) await deleteFile(details.id);
+      }
     } catch (err) { setError(err.message || 'Could not store this file.'); }
     finally { setBusy(false); }
   }
@@ -274,7 +285,7 @@ function ConfirmDialog({ action, state, today, apply, close }) {
           : state.events.filter((e) => e.id !== item.id) }, 'Class removed.');
       } else if (type === 'reset') {
         await clearFiles();
-        apply(freshState(action.demo, today), action.demo ? 'Example workspace loaded.' : 'Your workspace is ready.');
+        if (apply(freshState(action.demo, today), action.demo ? 'Example workspace loaded.' : 'Your workspace is ready.')) go('overview');
       }
     } catch (err) { setError(err.message || 'This change couldn’t be applied.'); }
     finally { setBusy(false); }
