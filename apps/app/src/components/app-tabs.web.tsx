@@ -13,16 +13,16 @@ const TABS = [
 ] as const satisfies readonly { name: string; href: string; icon: IconName; label: CopyKey }[];
 
 export default function AppTabs() {
-  // useWindowDimensions hydrates with the SSR value in static exports and the
-  // layout never re-renders to match — read the real viewport via matchMedia.
-  const query = `(min-width:${breakpoints.sidebar}px)`;
-  const [sidebar, setSidebar] = useState(() => window.matchMedia(query).matches);
+  // Hydration-safe: render the static default (bottom bar) first, then read the
+  // real viewport from matchMedia in an effect — never during render.
+  const [sidebar, setSidebar] = useState(false);
   useEffect(() => {
-    const mql = window.matchMedia(query);
+    const mql = window.matchMedia(`(min-width:${breakpoints.sidebar}px)`);
     const onChange = () => setSidebar(mql.matches);
+    onChange();
     mql.addEventListener('change', onChange);
     return () => mql.removeEventListener('change', onChange);
-  }, [query]);
+  }, []);
   return (
     <Tabs style={[{ flex: 1, height: '100%' }, sidebar ? { flexDirection: 'row-reverse' } : null]}>
       <TabSlot style={{ flex: 1, height: '100%' }} />

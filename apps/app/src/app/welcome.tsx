@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Pressable, ScrollView } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -9,6 +9,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import Head from 'expo-router/head';
+
+import { useSettled } from '@/lib/settled';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@studex/copy';
 import { useTheme, Text, Button, Icon, spacing, radii, type IconName } from '@studex/ui';
@@ -40,12 +42,20 @@ function Staggered({ index, children }: { index: number; children: React.ReactNo
 export default function WelcomeScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  // Settled once the longest staggered entrance finishes (5*60 delay + 300 duration).
+  const [animDone, setAnimDone] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setAnimDone(true), 700);
+    return () => clearTimeout(id);
+  }, []);
+  const { settledProps } = useSettled(animDone);
   return (
     <>
       <Head>
-        <title>Welcome — Studex</title>
+        <title>{'Welcome — Studex'}</title>
       </Head>
       <ScrollView
+        {...settledProps}
         style={{ flex: 1, backgroundColor: theme.bg.grouped }}
         contentContainerStyle={{
           flexGrow: 1,

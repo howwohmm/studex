@@ -27,6 +27,7 @@ where they conflict, the spec wins. Owner: lead. Implemented in `packages/ui` (P
 | `separator` | rgba(60,60,67,0.18) | rgba(84,84,88,0.65) | Hairlines |
 | `accent` | #4B5CF6 | #8A96FF | Text links, gauge, tints |
 | `accent.solid` / `onAccent` | #4B5CF6 / #FFFFFF | #4B5CF6 / #FFFFFF | Filled buttons (≥ 4.5:1, test-enforced) |
+| `accent.text` | #3D4CE0 | #8A96FF | Accent-colored text on `accent.soft` (badges, chips) — ≥ 4.5:1, test-enforced |
 | `accent.soft` | rgba(75,92,246,0.12) | rgba(138,150,255,0.18) | Tinted buttons, NOW row |
 | `status.attended` | #1EA446 | #32D74B | Small marks only |
 | `status.bunked` | #E5372B | #FF5A4E | Small marks only |

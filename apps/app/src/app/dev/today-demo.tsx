@@ -10,6 +10,8 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import Head from 'expo-router/head';
+
+import { useSettled } from '@/lib/settled';
 import { t } from '@studex/copy';
 import {
   tally,
@@ -160,14 +162,20 @@ export default function TodayDemo() {
   const insets = useSafeAreaInsets();
   const [slots, dispatch] = useReducer(reducer, INITIAL);
   const { clock: clockParam } = useLocalSearchParams<{ clock?: string }>();
-  const webClock =
-    Platform.OS === 'web' && typeof location !== 'undefined'
-      ? new URLSearchParams(location.search).get('clock')
-      : null;
-  const [clockIdx, setClockIdx] = useState(() => {
-    const idx = ['morning', 'midday', 'evening'].indexOf(webClock ?? clockParam ?? '');
-    return idx >= 0 ? idx : 1;
-  });
+  // Hydration-safe: render the static default (midday) first, then read ?clock=
+  // from the browser after mount — never during render.
+  const [clockIdx, setClockIdx] = useState(1);
+  const [clockReady, setClockReady] = useState(Platform.OS !== 'web');
+  useEffect(() => {
+    const raw =
+      Platform.OS === 'web' ? new URLSearchParams(location.search).get('clock') : clockParam;
+    const idx = ['morning', 'midday', 'evening'].indexOf(raw ?? '');
+    // Microtask: applies before the data-settled timer (macrotask).
+    void Promise.resolve().then(() => {
+      if (idx >= 0) setClockIdx(idx);
+      setClockReady(true);
+    });
+  }, [clockParam]);
   const clock = CLOCKS[clockIdx]!;
   const [undoVisible, setUndoVisible] = useState(false);
   const [backAbove, setBackAbove] = useState(false);
@@ -235,6 +243,8 @@ export default function TodayDemo() {
     return () => clearInterval(id);
   }, [pctNum, pctShared, reduce]);
 
+  const { settledProps } = useSettled(clockReady && (reduce || counted === pctNum));
+
   useEffect(() => {
     if (!wasEligible.current && eligible) {
       haptic('backAbove');
@@ -262,9 +272,9 @@ export default function TodayDemo() {
   return (
     <>
       <Head>
-        <title>Today demo — Studex</title>
+        <title>{'Today demo — Studex'}</title>
       </Head>
-      <View style={{ flex: 1, backgroundColor: theme.bg.grouped }}>
+      <View {...settledProps} style={{ flex: 1, backgroundColor: theme.bg.grouped }}>
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{
@@ -547,7 +557,7 @@ function ClassRow({
       <View style={{ flex: 1, gap: 2 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[8] }}>
           <Text variant="headline">{slot.subject.name}</Text>
-          {isNow ? <Badge label={t('today.badge.now')} /> : null}
+          {isNow ? <Badge label={t('today.badge.now')} color={theme.label.primary} /> : null}
         </View>
         <Text variant="subhead" color="secondary" numberOfLines={1}>
           {slot.subject.room} · {slot.subject.kind}

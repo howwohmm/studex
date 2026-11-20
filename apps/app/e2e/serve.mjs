@@ -4,7 +4,7 @@
 import { createServer } from 'node:http';
 import { existsSync, statSync, readFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
-import { extname, join } from 'node:path';
+import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const appRoot = fileURLToPath(new URL('..', import.meta.url));
@@ -20,20 +20,40 @@ if (!reuse) {
 }
 
 const MIME = {
-  '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
-  '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg',
-  '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.woff2': 'font/woff2',
-  '.ttf': 'font/ttf', '.map': 'application/json', '.webmanifest': 'application/manifest+json',
+  '.html': 'text/html',
+  '.js': 'text/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.map': 'application/json',
+  '.webmanifest': 'application/manifest+json',
 };
 
 createServer((req, res) => {
-  let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
-  for (const cand of [p, p + '.html', join(p, 'index.html')]) {
-    const f = join(dir, cand);
+  const deny = (code) => {
+    res.writeHead(code);
+    res.end('denied');
+  };
+  let pathname;
+  try {
+    pathname = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+  } catch {
+    return deny(400);
+  }
+  const rel = normalize(pathname);
+  if (rel.includes('..')) return deny(403);
+  for (const cand of [rel, rel + '.html', join(rel, 'index.html')]) {
+    const f = resolve(dir, '.' + cand);
+    if (f !== dir && !f.startsWith(dir + sep)) return deny(403);
     if (existsSync(f) && statSync(f).isFile()) {
       res.writeHead(200, { 'content-type': MIME[extname(f)] ?? 'application/octet-stream' });
       return res.end(readFileSync(f));
     }
   }
   res.writeHead(404).end('not found');
-}).listen(4173, () => console.log('[e2e] serving ' + dir + ' on :4173'));
+}).listen(4173, '127.0.0.1', () => console.log('[e2e] serving ' + dir + ' on 127.0.0.1:4173'));

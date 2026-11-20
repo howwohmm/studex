@@ -1,6 +1,7 @@
 import { SymbolView } from 'expo-symbols';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform } from 'react-native';
+import { useEffect } from 'react';
+import { Platform, Text } from 'react-native';
 import { useTheme } from '../theme';
 import type { ThemeColors } from '../tokens';
 
@@ -46,8 +47,36 @@ export function Icon({
           ? theme.label[color as keyof ThemeColors['label']]
           : color;
   const mapping = ICON_MAP[name];
+  // @expo/vector-icons renders an empty <Text/> until the web font finishes
+  // loading — SSR output and the first client render diverge, which breaks
+  // hydration. On web, render the glyph directly and kick the font load
+  // after mount instead.
+  useEffect(() => {
+    if (Platform.OS === 'web') void Ionicons.loadFont();
+  }, []);
   if (Platform.OS === 'ios') {
     return <SymbolView name={mapping.sf} size={size} tintColor={resolved} />;
+  }
+  if (Platform.OS === 'web') {
+    const glyph = String.fromCodePoint(
+      Number(
+        Ionicons.getRawGlyphMap()[mapping.ion as keyof ReturnType<typeof Ionicons.getRawGlyphMap>],
+      ),
+    );
+    return (
+      <Text
+        selectable={false}
+        style={{
+          color: resolved,
+          fontSize: size,
+          fontFamily: Ionicons.getFontFamily(),
+          fontWeight: 'normal',
+          fontStyle: 'normal',
+        }}
+      >
+        {glyph}
+      </Text>
+    );
   }
   return <Ionicons name={mapping.ion} size={size} color={resolved} />;
 }

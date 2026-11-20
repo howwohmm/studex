@@ -1,7 +1,7 @@
 import { Link, type Href } from 'expo-router';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Screen } from '@/components/Screen';
-import { ListRow, spacing } from '@studex/ui';
+import { useTheme, Text, spacing } from '@studex/ui';
 
 const ROUTES: { href: Href; label: string }[] = [
   { href: '/', label: 'Today (tabs)' },
@@ -20,12 +20,23 @@ const ROUTES: { href: Href; label: string }[] = [
 ];
 
 export default function QaLauncher() {
+  const theme = useTheme();
   return (
     <Screen title="QA">
       <View style={{ gap: spacing[8] }}>
         {ROUTES.map((r) => (
           <Link key={r.label} href={r.href} asChild>
-            <ListRow title={r.label} />
+            <Pressable
+              accessibilityRole="link"
+              style={({ pressed }) => ({
+                minHeight: 56,
+                justifyContent: 'center',
+                paddingHorizontal: spacing[16],
+                backgroundColor: pressed ? theme.fill.control : theme.bg.surface,
+              })}
+            >
+              <Text variant="headline">{r.label}</Text>
+            </Pressable>
           </Link>
         ))}
       </View>

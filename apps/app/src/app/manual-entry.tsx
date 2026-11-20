@@ -1,5 +1,7 @@
 import { ScrollView } from 'react-native';
 import Head from 'expo-router/head';
+
+import { useSettled } from '@/lib/settled';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@studex/copy';
@@ -8,12 +10,14 @@ import { useTheme, EmptyState, spacing } from '@studex/ui';
 export default function ManualEntryScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { settledProps } = useSettled();
   return (
     <>
       <Head>
-        <title>Manual entry — Studex</title>
+        <title>{'Manual entry — Studex'}</title>
       </Head>
       <ScrollView
+        {...settledProps}
         style={{ flex: 1, backgroundColor: theme.bg.grouped }}
         contentContainerStyle={{
           paddingTop: insets.top,
