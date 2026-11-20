@@ -2,8 +2,8 @@ import {
   ArrowDownToLine, ArrowUpRight, BookOpen, CalendarDays, ClipboardList, FileUp,
   GraduationCap, ListTodo, Plus, Sparkles, Target, TrendingUp,
 } from 'lucide-react';
-import { activeTask, niceDate, orderedTasks, overlaps, scheduleFor, shiftDate, subjectAttendance } from './model.js';
-import { Badge, Button, Empty, EventRow, PanelHead, TaskRow, TextLink, Tile } from './ui.jsx';
+import { niceDate, overlaps, scheduleFor, subjectAttendance, taskDeadlines } from './model.js';
+import { Badge, Button, dueLabel, Empty, EventRow, PanelHead, TaskRow, TextLink, Tile } from './ui.jsx';
 
 function HeroArt() {
   return <svg viewBox="0 0 470 246" className="hero-art" aria-hidden="true">
@@ -38,16 +38,14 @@ export default function Overview({ state, today, go, open, toggleTask }) {
   const events = scheduleFor(state, today);
   const classCount = events.filter((event) => event.kind !== 'Break' &&
     !state.records.some((record) => record.eventId === event.id && record.date === today && record.status === 'Cancelled')).length;
-  const tasks = orderedTasks(state.tasks.filter(activeTask));
-  const assignments = tasks.filter((task) => task.type !== 'Exam');
+  const { overdue, upcoming, dueSoon } = taskDeadlines(state.tasks, today);
   const attended = state.subjects.filter((s) => !s.archived).map((subject) => ({ ...subject, ...subjectAttendance(state, subject) }));
   const atRisk = attended.filter((s) => s.status === 'At risk').length;
   const health = [...attended].sort((a, b) => (a.held ? a.percent - a.threshold : Infinity) - (b.held ? b.percent - b.threshold : Infinity));
   const totals = attended.reduce((sum, row) => ({ present: sum.present + row.present, held: sum.held + row.held }), { present: 0, held: 0 });
   const date = niceDate(today, { weekday: 'long', day: 'numeric', month: 'long' });
   const name = state.profile.name.trim().split(/\s+/)[0];
-  const due = assignments.filter((item) => item.due >= today && item.due <= shiftDate(today, 7)).length;
-  const nextExams = tasks.filter((item) => item.type === 'Exam' && item.due >= today);
+  const nextExam = upcoming.find((item) => item.type === 'Exam');
   const setup = !state.demo && !state.events.length;
   const hasSubjects = attended.length > 0;
 
@@ -75,7 +73,7 @@ export default function Overview({ state, today, go, open, toggleTask }) {
     {(!setup || hasSubjects || state.tasks.length > 0 || state.records.length > 0) && <><div className="stats">
       <button className="stat" onClick={() => go('timetable')}><Tile icon={CalendarDays}/><span><small>Classes today</small><strong>{classCount}</strong></span><ArrowUpRight size={16} className="stat-arrow"/></button>
       <button className="stat" onClick={() => go('attendance')}><Tile icon={TrendingUp} color="mint"/><span><small>Overall attendance</small><strong>{totals.held ? (100 * totals.present / totals.held).toFixed(1) + '%' : '—'}</strong></span><ArrowUpRight size={16} className="stat-arrow"/></button>
-      <button className="stat" onClick={() => go('assignments')}><Tile icon={ClipboardList} color="amber"/><span><small>Due within 7 days</small><strong>{due}</strong></span><ArrowUpRight size={16} className="stat-arrow"/></button>
+      <button className="stat" onClick={() => go('assignments')}><Tile icon={ClipboardList} color="amber"/><span><small>Due within 7 days</small><strong>{dueSoon.length}</strong><small><span className={overdue.length ? 'overdue' : undefined}>{overdue.length} overdue</span></small></span><ArrowUpRight size={16} className="stat-arrow"/></button>
     </div>
     <div className="overview-grid">
       <section className="panel">
@@ -98,9 +96,13 @@ export default function Overview({ state, today, go, open, toggleTask }) {
       </section>
       <section className="panel">
         <PanelHead title="Upcoming work" subtitle="Stay ahead of your deadlines"><TextLink onClick={() => go('assignments')}>All assignments</TextLink></PanelHead>
-        {assignments.length ? <div className="task-list">{assignments.slice(0, 3).map((task) => <TaskRow key={task.id} task={task} today={today} subject={subjectFor(task.subjectId)} onOpen={() => open({ type: 'task', item: task })} onToggle={() => toggleTask(task.id)}/>)}</div>
-          : <Empty icon={ListTodo} title="You’re all caught up" action="Add an assignment" onAction={() => open({ type: 'task' })}/>}
+        {upcoming.length ? <div className="task-list">{upcoming.slice(0, 3).map((task) => <TaskRow key={task.id} task={task} today={today} subject={subjectFor(task.subjectId)} onOpen={() => open({ type: 'task', item: task })} onToggle={() => toggleTask(task.id)}/>)}</div>
+          : <Empty icon={ListTodo} title="No upcoming deadlines" action="Add an assignment" onAction={() => open({ type: 'task' })}/>}
       </section>
+      {overdue.length > 0 && <section className="panel">
+        <PanelHead title="Overdue work" subtitle={overdue.length + (overdue.length === 1 ? ' deadline has passed' : ' deadlines have passed')}><TextLink onClick={() => go('assignments')}>All assignments</TextLink></PanelHead>
+        <div className="task-list">{overdue.slice(0, 3).map((task) => <TaskRow key={task.id} task={task} today={today} subject={subjectFor(task.subjectId)} onOpen={() => open({ type: 'task', item: task })} onToggle={() => toggleTask(task.id)}/>)}</div>
+      </section>}
       <section className="panel">
         <PanelHead title="Quick actions" subtitle="Get something done in one step"/>
         <div className="quick-list">
@@ -109,8 +111,8 @@ export default function Overview({ state, today, go, open, toggleTask }) {
         </div>
       </section>
     </div></>}
-    {nextExams.length > 0 && <section className="panel exam-strip"><Tile icon={GraduationCap} color="blue"/><div><strong>{nextExams[0].title}</strong><p>Next exam · {niceDate(nextExams[0].due)}</p></div>
-      <Button variant="secondary" icon={BookOpen} onClick={() => open({ type: 'task', item: nextExams[0] })}>Exam details</Button></section>}
+    {nextExam && <section className="panel exam-strip"><Tile icon={GraduationCap} color="blue"/><div><strong>{nextExam.title}</strong><p>Next exam · {dueLabel(nextExam.due, today)}</p></div>
+      <Button variant="secondary" icon={BookOpen} onClick={() => open({ type: 'task', item: nextExam })}>Exam details</Button></section>}
     {state.demo && <p className="demo-foot"><Badge color="violet">Example data</Badge> Try the workspace here or start your own from Settings.</p>}
   </div>;
 }

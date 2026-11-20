@@ -19,7 +19,7 @@ The production build can reopen offline after the first complete online load on 
 
 - **Timetable:** add one-time or weekly classes and breaks, switch between day and week, review overlaps, or skip an occurrence. Optional profile term dates bound weekly slots. Import English timetable photos or text-based PDFs, CSV or TXT; inspect and edit the extracted rows before saving. Complex grids, faint photos and scanned PDFs are not reliably parsed; paste a transcription or use the CSV template instead.
 - **Attendance:** set a target per subject, enter prior counts, and mark a shared timetable occurrence from either screen. Cancelled slots are excluded, and you can undo attendance marks or correct them in history. The record-only forecast uses the exact target for eligibility, not the rounded display; it does not account for the remaining schedule.
-- **Assignments and Exams:** add deadlines, set priorities and statuses, filter by subject, and reopen completed work. Due dates and class days use India Standard Time.
+- **Assignments and Exams:** both appear in open work and deadline counts, with overdue items shown separately. Set priorities and statuses, filter by subject, reopen completed work, and undo deletion. Due dates and class days use India Standard Time.
 - **Subjects and Library:** keep units, topics, notes, course work and files together. Search filenames, display names, and extracted PDF/TXT text. Uploads are stored locally; files are downloadable but there is no full PDF annotation viewer yet.
 
 ### Timetable CSV template

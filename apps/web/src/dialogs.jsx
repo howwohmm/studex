@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BookOpen, Check, CircleAlert, ClipboardList, Download, FileText, MapPin, Search, Trash2, Upload } from 'lucide-react';
-import { ATTENDANCE_STATUSES, COLORS, DAYS, STATUSES, TASK_TYPES, dayOf, freshState, matchingRecord, niceDate, occurrenceLabel, overlaps, scheduleFor, uid, upsertRecord } from './model.js';
+import { ATTENDANCE_STATUSES, COLORS, DAYS, STATUSES, TASK_TYPES, dayOf, freshState, matchingRecord, niceDate, occurrenceLabel, overlaps, scheduleFor, taskKey, uid, upsertRecord } from './model.js';
 import { clearFiles, deleteFile, getFile, putFile } from './storage.js';
 import { fileAccept, fileHash, pdfMaterialText, verifyFile } from './files.js';
 import { ImportTimetable } from './import.jsx';
@@ -13,6 +13,8 @@ function updateSubject(state, id, update) {
   return { ...state, subjects: replace(state.subjects, update(subject)) };
 }
 const kindOptions = ['Class', 'Lecture', 'Lab', 'Tutorial', 'Seminar', 'Break'];
+const taskTitleLimit = 120;
+const graphemes = typeof Intl.Segmenter === 'function' ? new Intl.Segmenter() : null;
 const Titles = {
   subject: ['Add a subject', 'Edit subject'], event: ['Add a class', 'Edit class'],
   task: ['Add an assignment', 'Edit assignment'], record: ['Log attendance', 'Correct attendance'],
@@ -46,6 +48,8 @@ function FormDialog({ action, state, today, apply, close, open }) {
   const [recordDate, setRecordDate] = useState(item?.date || date);
   const [recordSubject, setRecordSubject] = useState(item?.subjectId || subjectId);
   const [occurrence, setOccurrence] = useState(item?.eventId || (item ? 'extra' : ''));
+  const [taskTitle, setTaskTitle] = useState(type === 'task' ? item?.title || '' : '');
+  const titleCount = Array.from(graphemes?.segment(taskTitle) ?? taskTitle).length;
   const profile = state.demo && !state.profile.edited ? {} : state.profile;
   const subjects = state.subjects.filter((s) => !s.archived || s.id === (item?.subjectId || subjectId));
   const candidates = type === 'record' && !item?.eventId && recordDate && recordSubject
@@ -105,12 +109,22 @@ function FormDialog({ action, state, today, apply, close, open }) {
     }
     if (type === 'task') {
       if (!get('title')) { setError('Enter a title for this assignment.'); return; }
+      if (titleCount > taskTitleLimit) { setError('Shorten the title to 120 characters or fewer.'); return; }
       const status = get('status');
-      const beforeComplete = status === 'Completed'
-        ? item?.status === 'Completed' ? item.beforeComplete : item?.status
-        : undefined;
-      next = { ...state, tasks: replace(state.tasks, { id: item?.id || uid(), title: get('title'), subjectId: get('subjectId'),
-        type: get('type'), priority: get('priority'), status, beforeComplete, due: get('due'), effort: get('effort'), description: get('description') }) };
+      const task = { id: item?.id || uid(), title: get('title'), subjectId: get('subjectId'),
+        type: get('type'), priority: get('priority'), status, due: get('due'), effort: get('effort'), description: get('description') };
+      const key = taskKey(task);
+      next = (current) => {
+        const previous = current.tasks.find((entry) => entry.id === task.id);
+        if (item && !previous) throw new Error('This assignment no longer exists.');
+        if ((!previous || taskKey(previous) !== key) && override !== key &&
+          current.tasks.some((entry) => entry.id !== task.id && taskKey(entry) === key)) {
+          setOverride(key);
+          throw new Error('An item with this title, type, subject, and deadline already exists. Save again to keep both.');
+        }
+        const beforeComplete = status === 'Completed' ? previous?.status === 'Completed' ? previous.beforeComplete : previous?.status : undefined;
+        return { ...current, tasks: replace(current.tasks, { ...task, beforeComplete }) };
+      };
       notice = item ? 'Assignment updated.' : 'Assignment added.';
     }
     if (type === 'record') {
@@ -158,7 +172,9 @@ function FormDialog({ action, state, today, apply, close, open }) {
         </>}
         {type === 'event' && <Field label="Class type" wide><select value={eventKind} onChange={(e) => setEventKind(e.target.value)}>{kindOptions.map((k) => <option key={k}>{k}</option>)}</select></Field>}
         {(['task', 'record'].includes(type) || (type === 'event' && eventKind !== 'Break')) && <>
-          {type === 'task' && <Field label="Title" wide><input name="title" defaultValue={item?.title} required maxLength={120} placeholder="What do you need to do?"/></Field>}
+          {type === 'task' && <Field label="Title" wide hint={<span className={titleCount > taskTitleLimit ? 'overdue' : undefined}>{titleCount} / {taskTitleLimit} characters</span>}>
+            <input name="title" value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} required placeholder="What do you need to do?"/>
+          </Field>}
           <Field label="Subject" wide><select name="subjectId" defaultValue={type === 'record' ? undefined : item?.subjectId || subjectId} value={type === 'record' ? recordSubject : undefined}
             onChange={type === 'record' ? (e) => { setRecordSubject(e.target.value); setOccurrence(''); } : undefined}
             disabled={type === 'record' && !!item?.eventId} required={type !== 'task'}>
@@ -370,7 +386,12 @@ function ConfirmDialog({ action, state, today, apply, close, go }) {
         if (item.hash) await deleteFile(item.id);
         apply((current) => ({ ...current, files: current.files.filter((f) => f.id !== item.id) }), 'Material deleted.');
       } else if (type === 'removeTask') {
-        apply({ ...state, tasks: state.tasks.filter((t) => t.id !== item.id) }, 'Assignment deleted.');
+        let removed;
+        apply((current) => {
+          removed = current.tasks.find((t) => t.id === item.id);
+          return { ...current, tasks: current.tasks.filter((t) => t.id !== item.id) };
+        }, 'Assignment deleted.', (current) => removed && !current.tasks.some((t) => t.id === item.id)
+          ? { ...current, tasks: [...current.tasks, removed] } : current, 'Assignment restored.');
       } else if (type === 'removeRecord') {
         apply((current) => ({ ...current, records: current.records.filter((record) => record.id !== item.id) }), 'Attendance mark removed.');
       } else if (type === 'removeUnit') {

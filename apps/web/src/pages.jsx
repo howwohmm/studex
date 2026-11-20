@@ -100,7 +100,7 @@ export function Assignments({ state, today, open, toggleTask }) {
   const [subjectId, setSubject] = useState('');
   const subjectFor = (id) => state.subjects.find((s) => s.id === id);
   const tasks = orderedTasks(state.tasks.filter((t) =>
-    (filter === 'All' || (filter === 'Open' && activeTask(t) && t.type !== 'Exam') ||
+    (filter === 'All' || (filter === 'Open' && activeTask(t)) ||
       (filter === 'Finished' && !activeTask(t)) || (filter === 'Exams' && t.type === 'Exam')) &&
     (!subjectId || t.subjectId === subjectId) && matches(query, t.title, t.description, subjectFor(t.subjectId)?.title)));
   return <>

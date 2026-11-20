@@ -62,6 +62,67 @@ test('create, complete, and find an assignment after reload', async ({ page }) =
   await expect(dialog(page).getByLabel('Status', { exact: true })).toHaveValue('In progress');
 });
 
+test('exams share Open and upcoming counts, while overdue work stays separate', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-11-20T12:00:00Z'));
+  await page.goto('/#/assignments');
+  await page.getByRole('main').getByRole('button', { name: 'New assignment' }).click();
+  await dialog(page).getByLabel('Title', { exact: true }).fill('Calculus midterm');
+  await dialog(page).getByLabel('Type', { exact: true }).selectOption('Exam');
+  await dialog(page).getByLabel('Due date').fill('2026-11-21');
+  await dialog(page).getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByRole('button', { name: /Calculus midterm.*Exam.*Due tomorrow/ })).toBeVisible();
+  const assignment = page.getByRole('button', { name: /Submit SQL lab journal/ });
+  await assignment.click();
+  await dialog(page).getByLabel('Due date').fill('2026-11-19');
+  await dialog(page).getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByRole('button', { name: /Operating Systems midterm/ }).click();
+  await dialog(page).getByLabel('Due date').fill('2035-11-20');
+  await dialog(page).getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByRole('button', { name: /Operating Systems midterm.*20 Nov 2035/ })).toBeVisible();
+  await nav(page).getByRole('link', { name: 'Overview' }).click();
+  const stat = page.getByRole('button', { name: /Due within 7 days/ });
+  await expect(stat.locator('strong')).toHaveText('3');
+  await expect(stat.getByText('1 overdue', { exact: true })).toBeVisible();
+  const panel = (name) => page.locator('section').filter({ has: page.getByRole('heading', { name, exact: true }) });
+  await expect(panel('Upcoming work').getByRole('button', { name: /Calculus midterm/ })).toBeVisible();
+  await expect(panel('Upcoming work').getByRole('button', { name: /Submit SQL lab journal/ })).toHaveCount(0);
+  await expect(panel('Overdue work').getByRole('button', { name: /Submit SQL lab journal/ })).toBeVisible();
+});
+
+test('title limits are visible, duplicates ask before saving, and delete can be undone', async ({ page }) => {
+  await page.goto('/#/assignments');
+  const newAssignment = page.getByRole('main').getByRole('button', { name: 'New assignment' });
+  const title = dialog(page).getByLabel('Title', { exact: true });
+  const save = dialog(page).getByRole('button', { name: 'Save', exact: true });
+  const caption = 'गणित 👩🏽‍💻';
+  await newAssignment.click();
+  const longTitle = 'Long title '.repeat(50);
+  await title.fill(longTitle);
+  await expect(title).toHaveValue(longTitle);
+  await expect(dialog(page).getByText('550 / 120 characters')).toBeVisible();
+  await save.click();
+  await expect(dialog(page).getByRole('alert')).toHaveText(/Shorten the title/);
+  await title.fill(caption);
+  await expect(dialog(page).getByText('5 / 120 characters')).toBeVisible();
+  await save.click();
+  const copies = page.getByRole('button', { name: /गणित/ });
+  await expect(copies).toHaveCount(1);
+  await newAssignment.click();
+  await title.fill(caption);
+  await save.click();
+  await expect(dialog(page).getByRole('alert')).toHaveText(/already exists/);
+  await dialog(page).getByRole('button', { name: 'Save anyway', exact: true }).click();
+  await expect(copies).toHaveCount(2);
+  await copies.first().click();
+  await dialog(page).getByRole('button', { name: 'Delete', exact: true }).click();
+  await dialog(page).getByRole('button', { name: 'Remove', exact: true }).click();
+  await expect(copies).toHaveCount(1);
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(page.getByText('Assignment restored.')).toBeVisible();
+  await page.reload();
+  await expect(copies).toHaveCount(2);
+});
+
 test('review CSV changes before linking imported classes to the subject workspace', async ({ page }) => {
   await page.goto('/#/timetable');
   await page.getByRole('button', { name: 'Import', exact: true }).click();

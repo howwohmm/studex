@@ -125,11 +125,11 @@ function App() {
     if (readRoute() !== next) window.location.hash = '/' + next;
     else scrollToTop();
   }
-  function apply(next, message, undo) {
+  function apply(next, message, undo, undoMessage = 'Attendance restored.') {
     const updated = typeof next === 'function' ? next(loadWorkspace() ?? state) : next;
     try {
       saveWorkspace(updated);
-      setState(updated); setAction(null); setNote({ message, undo });
+      setState(updated); setAction(null); setNote({ message, undo, undoMessage });
       return true;
     } catch {
       setNote({ message: 'Could not save to this browser. Check available storage and try again.', error: true });
@@ -145,7 +145,7 @@ function App() {
   const props = { state, today, go, open: setAction, toggleTask, missingOriginals };
   const notice = note && <div className={'toast' + (note.error ? ' error' : '')}>
     <span role={note.error ? 'alert' : 'status'}>{note.message}</span>
-    {note.undo && <button type="button" onClick={() => apply(note.undo(state), 'Attendance restored.')}>Undo</button>}
+    {note.undo && <button type="button" onClick={() => apply(note.undo, note.undoMessage)}>Undo</button>}
     <button className="toast-dismiss" type="button" aria-label="Dismiss notification" onClick={() => setNote(null)}><X size={16}/></button>
   </div>;
   return <div className="app-shell">

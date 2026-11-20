@@ -89,6 +89,19 @@ export function orderedTasks(tasks) {
   return [...tasks].sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999') || a.title.localeCompare(b.title));
 }
 
+export function taskDeadlines(tasks, today) {
+  const dated = orderedTasks(tasks.filter((task) => activeTask(task) && task.due));
+  const overdue = dated.filter((task) => task.due < today);
+  const upcoming = dated.filter((task) => task.due >= today);
+  const cutoff = shiftDate(today, 7);
+  return { overdue, upcoming, dueSoon: upcoming.filter((task) => task.due <= cutoff) };
+}
+
+const normalizeTitle = (title) => title.normalize().toLowerCase().replace(/\s+/g, ' ').trim();
+export function taskKey(task) {
+  return JSON.stringify([normalizeTitle(task.title), task.subjectId || '', task.due || '', task.type]);
+}
+
 export function freshState(demo = true, today = dateKey()) {
   const empty = { version: 1, demo, profile: { name: '', university: '', program: '', semester: '' }, subjects: [], events: [], tasks: [], records: [], files: [] };
   if (!demo) return empty;

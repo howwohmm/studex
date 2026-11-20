@@ -1,12 +1,37 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { attendance, dateKey, freshState, overlaps, scheduleFor, shiftDate, subjectAttendance, upsertRecord, weekStart } from './model.js';
+import { attendance, dateKey, freshState, overlaps, scheduleFor, shiftDate, subjectAttendance, taskDeadlines, taskKey, upsertRecord, weekStart } from './model.js';
 
 test('date keys, calendar weeks and day arithmetic use Indian civil dates', () => {
   assert.equal(dateKey(new Date('2026-01-31T18:29:59Z')), '2026-01-31');
   assert.equal(dateKey(new Date('2026-01-31T18:30:00Z')), '2026-02-01');
   assert.equal(weekStart('2026-02-01'), '2026-01-26');
   assert.equal(shiftDate('2028-02-28', 1), '2028-02-29');
+});
+
+test('open assignments and exams share deadline buckets across IST midnight', () => {
+  const tasks = [
+    { title: 'Lecture notes', due: '2026-01-31' },
+    { title: 'Midterm', type: 'Exam', due: '2026-02-01' },
+    { title: 'Next week', due: '2026-02-08' },
+    { title: 'No deadline' },
+    { title: 'Already done', status: 'Completed', due: '2026-02-01' },
+    { title: 'Not happening', status: 'Cancelled', due: '2026-01-30' },
+  ];
+  const before = taskDeadlines(tasks, dateKey(new Date('2026-01-31T18:29:59Z')));
+  const after = taskDeadlines(tasks, dateKey(new Date('2026-01-31T18:30:00Z')));
+  assert.deepEqual(before.dueSoon, tasks.slice(0, 2));
+  assert.deepEqual(before.overdue, []);
+  assert.deepEqual(after.dueSoon, tasks.slice(1, 3));
+  assert.deepEqual(after.overdue, tasks.slice(0, 1));
+  assert.deepEqual(after.upcoming, after.dueSoon);
+});
+
+test('duplicate work ignores title casing and spacing, not distinct coursework', () => {
+  const task = { title: '  Lab    report ', subjectId: 'cs', due: '2026-11-20', type: 'Assignment' };
+  assert.equal(taskKey(task), taskKey({ ...task, title: 'lab report', priority: 'High' }));
+  assert.notEqual(taskKey(task), taskKey({ ...task, due: '2026-11-21' }));
+  assert.notEqual(taskKey(task), taskKey({ ...task, type: 'Exam' }));
 });
 
 test('weekly and one-time events sort by time without archived or skipped classes', () => {

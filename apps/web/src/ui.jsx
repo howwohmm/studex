@@ -73,6 +73,7 @@ export function EventRow({ item, subject, record, conflict, onClick }) {
 export function dueLabel(due, today) {
   if (!due) return 'No due date';
   if (due === today) return 'Due today';
+  if (due.slice(0, 4) !== today.slice(0, 4)) return 'Due ' + niceDate(due, { day: 'numeric', month: 'short', year: 'numeric' });
   if (due === shiftDate(today, 1)) return 'Due tomorrow';
   return 'Due ' + niceDate(due);
 }
@@ -81,7 +82,7 @@ export function TaskRow({ task, subject, today, onOpen, onToggle }) {
   const cancelled = task.status === 'Cancelled';
   return <div className={'task-row' + (done ? ' is-done' : '')}>
     <label className="task-check"><input type="checkbox" aria-label={(done ? 'Reopen ' : 'Complete ') + task.title} checked={done} disabled={cancelled} onChange={onToggle}/></label>
-    <button className="task-title" onClick={onOpen}><strong>{task.title}</strong><small>{subject?.title ?? task.type} <span>·</span> <span className={!done && !cancelled && task.due && task.due < today ? 'overdue' : ''}>{dueLabel(task.due, today)}</span></small></button>
+    <button className="task-title" onClick={onOpen}><strong>{task.title}</strong><small>{subject ? subject.title + (task.type === 'Exam' ? ' · Exam' : '') : task.type} <span>·</span> <span className={!done && !cancelled && task.due && task.due < today ? 'overdue' : ''}>{dueLabel(task.due, today)}</span></small></button>
     <Badge color={task.priority === 'High' ? 'rose' : task.priority === 'Medium' ? 'amber' : 'neutral'}>{task.priority}</Badge>
   </div>;
 }
