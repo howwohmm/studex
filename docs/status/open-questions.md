@@ -34,4 +34,4 @@ Agents append rung-5 assumptions (`09` §4) to the second table.
 ## Assumptions made by agents
 | Date | Ticket | Assumption | Status |
 |---|---|---|---|
-| 2026-11-20 | P0-06 | `termEndForecast` returns null when nothing is held and nothing remains (no "0%" for 0/0) | adopted; spec §10 updated in the P0-06 PR |
+| 2026-11-20 | P0-06 | `termEndForecast` returns null when nothing is held and nothing remains (no "0%" for 0/0) | adopted by lead; spec §10 updated in the P0-06 PR |

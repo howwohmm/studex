@@ -1,4 +1,5 @@
 import {
+  assertCapped,
   assertLocalDate,
   assertPolicy,
   assertTally,
@@ -19,9 +20,7 @@ const VALID_EXCUSED_KINDS = new Set(['on_duty', 'medical', 'other']);
 
 function excusedMappingFor(policy: AttendancePolicy, kind: ExcusedKind): ExcusedMapping {
   if (policy.excused === null) return 'excluded';
-  const mapping = policy.excused[kind];
-  if (mapping === undefined) fail(`no excused mapping configured for kind '${kind}'`);
-  return mapping;
+  return policy.excused[kind];
 }
 
 export function markContribution(mark: Mark, policy: AttendancePolicy): Tally {
@@ -67,6 +66,8 @@ export function tally(
     if (baseline.asOf !== null && mark.localDate <= baseline.asOf) continue;
     attended += c.attended;
     held += c.held;
+    assertCapped(attended, 'attended');
+    assertCapped(held, 'held');
   }
   return { attended, held };
 }

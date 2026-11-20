@@ -1,4 +1,4 @@
-import { assertPolicy, assertTally } from './validate.js';
+import { assertCapped, assertPolicy, assertTally } from './validate.js';
 import { markContribution } from './tally.js';
 import type {
   AttendancePolicy,
@@ -36,6 +36,8 @@ export function simulate(
           };
     const c = markContribution(mark, policy);
     current = { attended: current.attended + c.attended, held: current.held + c.held };
+    assertCapped(current.attended, 'attended');
+    assertCapped(current.held, 'held');
     out.push(current);
   }
   return out;

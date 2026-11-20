@@ -27,10 +27,29 @@ export function assertUnits(value: Units, name: string): void {
   if (value > MAX_INPUT) fail(`${name} must be <= ${MAX_INPUT}, got ${value}`);
 }
 
+const VALID_ROUNDINGS = new Set(['exact', 'half_up_integer']);
+const VALID_BASES = new Set(['per_subject', 'overall', 'both']);
+const VALID_MAPPINGS = new Set(['present', 'excluded', 'absent']);
+const EXCUSED_KINDS = ['on_duty', 'medical', 'other'] as const;
+
 export function assertPolicy(policy: AttendancePolicy): void {
   assertInt(policy.thresholdBp, 'thresholdBp');
   if (policy.thresholdBp < 0 || policy.thresholdBp > 10_000) {
     fail(`thresholdBp must be in 0..10000, got ${policy.thresholdBp}`);
+  }
+  if (!VALID_ROUNDINGS.has(policy.rounding)) {
+    fail(`rounding must be 'exact' or 'half_up_integer', got '${policy.rounding}'`);
+  }
+  if (!VALID_BASES.has(policy.basis)) {
+    fail(`basis must be 'per_subject', 'overall' or 'both', got '${policy.basis}'`);
+  }
+  if (policy.excused !== null) {
+    for (const kind of EXCUSED_KINDS) {
+      const m = policy.excused[kind];
+      if (!VALID_MAPPINGS.has(m)) {
+        fail(`excused.${kind} must map to 'present', 'excluded' or 'absent', got '${m}'`);
+      }
+    }
   }
 }
 

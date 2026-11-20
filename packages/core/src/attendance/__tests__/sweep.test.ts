@@ -63,3 +63,49 @@ describe('§11.3 exhaustive boundary sweep (closed form == brute force)', () => 
     }
   });
 });
+
+describe('§11.3 unknown term end (empty upcoming, H∈[1,40] — narrowed for the <10s budget)', () => {
+  const openHorizon: Horizon = { upcoming: [], termEndKnown: false };
+  const thresholds = [5000, 6000, 6500, 6667, 7000, 7500, 7550, 8000, 8500, 9000, 9500, 10_000];
+
+  /** Independent brute force over virtual 1-unit bunks. */
+  function bruteOpenSafeNow(A: number, H: number, T: number): number {
+    if (!eligible(A, H, T)) return 0;
+    let k = 0;
+    while (eligible(A, H + k + 1, T)) k += 1;
+    return k;
+  }
+
+  /** Independent brute force over virtual 1-unit attends. */
+  function bruteOpenRecovery(A: number, H: number, T: number): number | 'eligible' | 'unreachable' {
+    if (eligible(A, H, T)) return 'eligible';
+    if (T === 10_000) return 'unreachable';
+    for (let n = 1; ; n += 1) {
+      if (eligible(A + n, H + n, T)) return n;
+    }
+  }
+
+  it.each(thresholds)('T=%i over all H∈[1,40], A∈[0,H]', (T) => {
+    const p = policy(T);
+    for (let H = 1; H <= 40; H += 1) {
+      for (let A = 0; A <= H; A += 1) {
+        const tl = { attended: A, held: H };
+        expect(safeNowBudget(tl, openHorizon, p), `safeNow A=${A} H=${H}`).toBe(
+          bruteOpenSafeNow(A, H, T),
+        );
+        const expected = bruteOpenRecovery(A, H, T);
+        const actual = recovery(tl, openHorizon, p);
+        if (expected === 'unreachable') {
+          expect(actual, `recovery A=${A} H=${H}`).toEqual({
+            kind: 'unreachable',
+            maxReachableDisplay: null,
+          });
+        } else if (expected === 'eligible') {
+          expect(actual, `recovery A=${A} H=${H}`).toEqual({ kind: 'eligible' });
+        } else {
+          expect(actual, `recovery A=${A} H=${H}`).toEqual({ kind: 'recoverable', n: expected });
+        }
+      }
+    }
+  });
+});

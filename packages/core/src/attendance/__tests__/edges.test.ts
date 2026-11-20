@@ -293,3 +293,47 @@ describe('validate helpers', () => {
     expect(floorDivBig(0n, 10_000n)).toBe(0n);
   });
 });
+
+describe('§10 input validation — budgets, accumulation caps, policy fields', () => {
+  it('FR-ATT-001: copyBand/colorBand reject invalid k', () => {
+    const p = exact();
+    const tl = t(33, 40);
+    for (const bad of [-1, 0.5, NaN, -Infinity]) {
+      expect(() => copyBand(tl, bad, p)).toThrowError(/^attendance:/);
+      expect(() => colorBand(tl, bad, p)).toThrowError(/^attendance:/);
+    }
+    // Infinity is legal — the unknown-term-end T=0 path produces it.
+    const inf = safeNowBudget(t(1, 2), h([1], false), exact(0));
+    expect(inf).toBe(Infinity);
+    expect(copyBand(tl, inf, p)).toBe('above');
+    expect(colorBand(t(39, 40), inf, p)).toBe('good');
+    expect(copyBand(tl, 2, p)).toBe('above');
+  });
+
+  it('FR-ATT-001: accumulated attended/held above 1,000,000 throws (tally and simulate)', () => {
+    const p = exact();
+    expect(() =>
+      tally(
+        baseline(999_999, 999_999),
+        [mark({ status: 'attended', units: 2 })],
+        p,
+      ),
+    ).toThrowError(/^attendance:/);
+    expect(() =>
+      simulate(t(999_999, 999_999), [{ units: 2, status: 'attended' }], p),
+    ).toThrowError(/^attendance:/);
+  });
+
+  it('FR-ATT-001: assertPolicy rejects bad rounding, basis and excused maps', () => {
+    const good = exact();
+    const bads: AttendancePolicy[] = [
+      { ...good, rounding: 'bankers' as AttendancePolicy['rounding'] },
+      { ...good, basis: 'weekly' as AttendancePolicy['basis'] },
+      { ...good, excused: { on_duty: 'present', medical: 'excluded' } as AttendancePolicy['excused'] },
+      { ...good, excused: { on_duty: 'present', medical: 'half' as never, other: 'absent' } },
+    ];
+    for (const bad of bads) {
+      expect(() => isEligible(t(3, 4), bad)).toThrowError(/^attendance:/);
+    }
+  });
+});

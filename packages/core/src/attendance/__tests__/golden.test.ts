@@ -37,7 +37,7 @@ export function upcomingOf(
 ): UpcomingOccurrence[] {
   return Array.from({ length: R }, (_, i) => ({
     occurrenceKey: `o${i}`,
-    startsAt: `2026-11-${String(20 + i).padStart(2, '0')}T09:00:00.000Z`,
+    startsAt: new Date(Date.UTC(2026, 10, 21) + i * 86_400_000).toISOString(),
     units: Array.isArray(units) ? (units[i] ?? 1) : (units as number),
     subjectId: 's',
   }));

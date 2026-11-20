@@ -118,7 +118,10 @@ describe('properties §11.2', () => {
       fc.property(arbNonZeroTally, arbT, fc.nat(60), (tl, T, R) => {
         const p = exactPolicy(T);
         const k = safeNowBudget(tl, unitHorizon(R), p);
-        if (k === null || k === Infinity) return;
+        // held > 0 ⇒ never null; termEndKnown ⇒ capped at R, never Infinity.
+        expect(k).not.toBeNull();
+        if (k === null) throw new Error('unreachable');
+        expect(Number.isFinite(k)).toBe(true);
         const bunkedTo = (n: number): Tally => ({ attended: tl.attended, held: tl.held + n });
         if (!eligibleExact(tl.attended, tl.held, T)) {
           expect(k).toBe(0);
