@@ -5,8 +5,8 @@ begin;
 create extension if not exists pgtap;
 
 -- plan: 20 synced delete-denied + 1 events-insert denied + 4 consents
---     + 4 support role + 1 updated_at + 2 uuidv7 = 32
-select plan(32);
+--     + 4 support role + 1 updated_at + 3 uuidv7 = 33
+select plan(33);
 
 insert into auth.users (id, email, aud, role, encrypted_password, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data)
 values ('019b0000-0000-7000-8000-0000000000b2', 'other@studex.local', 'authenticated', 'authenticated', '', now(), now(), now(), '{}', '{}')
@@ -160,6 +160,13 @@ returning id \gset job_
 select is(
   :'job_id'::text ~ '^........-....-7...-[89ab]',
   true, 'server-default PKs are UUIDv7');
+
+select is(
+  (select count(*)::int from information_schema.columns
+    where table_schema = 'public' and column_name = 'id'
+      and column_default ilike '%gen_random_uuid%'),
+  0,
+  'no public table still defaults its id to UUIDv4');
 
 select * from finish();
 rollback;

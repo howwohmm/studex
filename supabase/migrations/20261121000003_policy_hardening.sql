@@ -40,7 +40,7 @@ declare
     'consents', 'devices', 'entitlements', 'institutions', 'campuses',
     'programs', 'departments', 'holiday_lists', 'grade_scales',
     'assessment_templates', 'support_tickets', 'support_messages', 'data_jobs',
-    'baseline_history', 'attendance_events'
+    'baseline_history', 'attendance_events', 'calendar_feeds'
   ];
 begin
   foreach t in array v7_tables loop

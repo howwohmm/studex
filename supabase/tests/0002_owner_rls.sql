@@ -16,7 +16,7 @@ returns text[] language sql as $$
 $$;
 
 -- plan: 26 B-empty + 26 anon-empty + 26 A-visible + 4 denied inserts
---     + 4 notes CRUD effects + 3 support_messages = 115
+--     + 4 notes CRUD effects + 3 support_messages = 89
 select plan(89);
 
 -- A second user who owns nothing.
