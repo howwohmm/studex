@@ -7,7 +7,8 @@ import {
 import '@fontsource-variable/dm-sans';
 import '@fontsource-variable/manrope';
 import { dateKey, freshState } from './model.js';
-import { loadWorkspace, saveWorkspace } from './storage.js';
+import { getFile, getFileKeys, loadWorkspace, saveWorkspace } from './storage.js';
+import { pdfMaterialText } from './files.js';
 import { WorkspaceDialog } from './dialogs.jsx';
 import Overview from './overview.jsx';
 import { Assignments, Attendance, Library, Settings, SubjectPage, Subjects, Timetable } from './pages.jsx';
@@ -19,7 +20,13 @@ const nav = [
   ['assignments', 'Assignments', ClipboardList], ['library', 'Library', FolderClosed],
 ];
 const readRoute = () => window.location.hash.slice(1).replace(/^\//, '') || 'overview';
-const pageFor = (route) => route === 'timetable/week' ? 'timetable' : route.startsWith('subject/') ? 'subjects' : route;
+const pageFor = (route) => route === 'timetable/week' ? 'timetable' : route.startsWith('subject/') ? 'subjects'
+  : route.startsWith('attendance/') ? 'attendance' : route;
+const mobileNav = [...nav.filter(([id]) => id !== 'library'), ['subjects', 'Subjects', BookOpen]];
+const scrollToTop = () => {
+  window.scrollTo(0, 0);
+  document.querySelector('.workspace-main')?.scrollTo(0, 0);
+};
 
 function NavLink({ path, label, icon: Icon, route, go }) {
   const active = pageFor(route) === path;
@@ -36,13 +43,16 @@ function App() {
   const [action, setAction] = useState(null);
   const [note, setNote] = useState(null);
   const [sidebar, setSidebar] = useState(false);
+  const [originals, setOriginals] = useState(null);
   const subject = route.startsWith('subject/') ? state.subjects.find((s) => s.id === route.split('/')[1]) : null;
   const currentPage = pageFor(route);
   const page = nav.find(([id]) => id === currentPage)?.[1] || (currentPage === 'settings' ? 'Settings' : 'Subjects');
   const initials = state.profile.name.trim().split(/\s+/).slice(0, 2).map((v) => v.charAt(0)).join('').toUpperCase() || 'S';
+  const missingOriginals = new Set(originals?.files === state.files
+    ? state.files.filter((file) => file.hash && !originals.keys.has(file.id)).map((file) => file.id) : []);
 
   useEffect(() => {
-    const updateRoute = () => { setRoute(readRoute()); setAction(null); setSidebar(false); window.scrollTo(0, 0); };
+    const updateRoute = () => { setRoute(readRoute()); setAction(null); setSidebar(false); scrollToTop(); };
     const keyboard = (event) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault(); setAction((current) => current || { type: 'search' });
@@ -53,7 +63,7 @@ function App() {
     const sync = (event) => {
       if (event.key === 'studex-workspace-v1') {
         const latest = loadWorkspace();
-        if (latest) { setState(latest); setAction(null); }
+        if (latest) { setState(latest); setNote({ message: 'Workspace updated in another tab.' }); }
       }
     };
     const interval = setInterval(refreshDate, 30_000);
@@ -69,20 +79,57 @@ function App() {
   }, []);
   useEffect(() => {
     if (!note) return;
-    const timer = setTimeout(() => setNote(null), note.error ? 8000 : 3500);
+    const timer = setTimeout(() => setNote(null), note.undo || note.error ? 8000 : 2800);
     return () => clearTimeout(timer);
   }, [note]);
+  useEffect(() => {
+    if (!state.files.some((file) => file.hash)) return;
+    let active = true;
+    const refresh = () => { void getFileKeys().then((keys) => {
+      if (active) setOriginals({ files: state.files, keys: new Set(keys) });
+    }, () => { if (active) setOriginals(null); }); };
+    refresh();
+    window.addEventListener('focus', refresh);
+    return () => { active = false; window.removeEventListener('focus', refresh); };
+  }, [state.files]);
+  useEffect(() => {
+    const pending = state.files.filter((file) => file.textState === 'pending');
+    if (!pending.length) return;
+    let active = true;
+    let running = false;
+    async function retry() {
+      if (!navigator.onLine || running) return;
+      running = true;
+      try {
+        for (const item of pending) {
+          const file = await getFile(item.id);
+          if (!file) continue;
+          const extracted = await pdfMaterialText(file).catch(() => ({ textState: 'unavailable' }));
+          if (!active || extracted.textState === 'pending') return;
+          const current = loadWorkspace();
+          if (!current?.files.some((entry) => entry.id === item.id && entry.textState === 'pending')) continue;
+          const updated = { ...current, files: current.files.map((entry) => entry.id === item.id ? { ...entry, ...extracted } : entry) };
+          saveWorkspace(updated);
+          setState(updated);
+        }
+      } catch { /* Preserve pending work if browser storage is unavailable. */ }
+      finally { running = false; }
+    }
+    void retry();
+    window.addEventListener('online', retry);
+    return () => { active = false; window.removeEventListener('online', retry); };
+  }, [state.files]);
 
   function go(next) {
     setAction(null); setSidebar(false);
     if (readRoute() !== next) window.location.hash = '/' + next;
-    else window.scrollTo(0, 0);
+    else scrollToTop();
   }
-  function apply(next, message) {
+  function apply(next, message, undo) {
     const updated = typeof next === 'function' ? next(loadWorkspace() ?? state) : next;
     try {
       saveWorkspace(updated);
-      setState(updated); setAction(null); setNote({ message });
+      setState(updated); setAction(null); setNote({ message, undo });
       return true;
     } catch {
       setNote({ message: 'Could not save to this browser. Check available storage and try again.', error: true });
@@ -95,7 +142,12 @@ function App() {
     apply({ ...state, tasks }, tasks.find((t) => t.id === id)?.status === 'Completed' ? 'Assignment completed.' : 'Assignment reopened.');
   }
 
-  const props = { state, today, go, open: setAction, toggleTask };
+  const props = { state, today, go, open: setAction, toggleTask, missingOriginals };
+  const notice = note && <div className={'toast' + (note.error ? ' error' : '')}>
+    <span role={note.error ? 'alert' : 'status'}>{note.message}</span>
+    {note.undo && <button type="button" onClick={() => apply(note.undo(state), 'Attendance restored.')}>Undo</button>}
+    <button className="toast-dismiss" type="button" aria-label="Dismiss notification" onClick={() => setNote(null)}><X size={16}/></button>
+  </div>;
   return <div className="app-shell">
     <a className="skip-link" href="#main-content" onClick={(event) => { event.preventDefault(); document.getElementById('main-content').focus(); }}>Skip to content</a>
     {sidebar && <button className="sidebar-scrim" aria-label="Close menu" onClick={() => setSidebar(false)} />}
@@ -130,20 +182,31 @@ function App() {
       <main id="main-content" tabIndex={-1} className="page-content">
         {route === 'overview' && <Overview {...props}/>}
         {currentPage === 'timetable' && <Timetable key={route} {...props} initialView={route === 'timetable/week' ? 'Week' : 'Day'}/>}
-        {route === 'attendance' && <Attendance {...props}/>}
+        {currentPage === 'attendance' && <Attendance key={route} {...props} initialSubject={route.split('/')[1]}/>}
         {route === 'assignments' && <Assignments {...props}/>}
         {route === 'library' && <Library {...props}/>}
         {route === 'settings' && <Settings {...props}/>}
         {route.startsWith('subject/') && <SubjectPage key={route} {...props} subject={subject}/>}
-        {!['overview', 'timetable', 'attendance', 'assignments', 'library', 'settings'].includes(currentPage) && !route.startsWith('subject/') && <Subjects {...props}/>}
+        {route === 'subjects' && <Subjects {...props}/>}
+        {!['overview', 'timetable', 'attendance', 'assignments', 'library', 'subjects', 'settings'].includes(currentPage) &&
+          <section className="panel setup-panel"><h1>Page not found</h1><p>This page isn’t part of your workspace.</p><Button onClick={() => go('overview')}>Back to overview</Button></section>}
       </main>
     </div>
-    <nav className="bottom-nav" aria-label="Quick navigation">
-      {nav.map(([path, label, Icon]) => <NavLink key={path} path={path} label={label === 'Assignments' ? 'Tasks' : label} icon={Icon} route={route} go={go}/>)}
-    </nav>
-    {action && <WorkspaceDialog key={action.type + (action.item?.id || '')} action={action} state={state} today={today} go={go} open={setAction} apply={apply} close={() => setAction(null)}/>}
-    {note && <div role={note.error ? 'alert' : 'status'} className={'toast' + (note.error ? ' error' : '')}>{note.message}</div>}
+    <div className="mobile-dock">
+      {notice}
+      <nav className="bottom-nav" aria-label="Quick navigation">
+        {mobileNav.map(([path, label, Icon]) => <NavLink key={path} path={path} label={label === 'Assignments' ? 'Tasks' : label} icon={Icon} route={route} go={go}/>)}
+        <button className="mobile-add" aria-label="Quick actions" onClick={() => setAction({ type: 'quick' })}><Plus size={20}/><span>Add</span></button>
+      </nav>
+    </div>
+    {action && <WorkspaceDialog key={action.type + (action.item?.id || '')} action={action} state={state} today={today} go={go} open={setAction} apply={apply} missingOriginals={missingOriginals} close={() => setAction(null)}/>}
   </div>;
 }
 
 createRoot(document.getElementById('root')).render(<StrictMode><App/></StrictMode>);
+
+if (import.meta.env.PROD && import.meta.env.VITE_STUDEX_OFFLINE !== 'false' && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register(import.meta.env.BASE_URL + 'offline-worker.js').catch(() => {});
+  }, { once: true });
+}

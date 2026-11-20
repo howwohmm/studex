@@ -33,6 +33,21 @@ test('timetable overlap respects calendar exceptions and adjacent classes', () =
   assert.equal(overlaps(monday, { ...once, id: 'weekly' }), false);
 });
 
+test('term dates bound weekly classes and breaks, not standalone events', () => {
+  const state = freshState(false);
+  state.profile = { termStart: '2026-04-06', termEnd: '2026-04-13' };
+  state.subjects = [{ id: 's' }];
+  state.events = [
+    { id: 'weekly', subjectId: 's', day: 1, start: '09:00' },
+    { id: 'break', kind: 'Break', day: 1, start: '12:00' },
+    { id: 'once', subjectId: 's', date: '2026-04-20', start: '10:00' },
+  ];
+  assert.deepEqual(scheduleFor(state, '2026-03-30'), []);
+  assert.deepEqual(scheduleFor(state, '2026-04-06').map((event) => event.id), ['weekly', 'break']);
+  assert.deepEqual(scheduleFor(state, '2026-04-13').map((event) => event.id), ['weekly', 'break']);
+  assert.deepEqual(scheduleFor(state, '2026-04-20').map((event) => event.id), ['once']);
+});
+
 test('missing and impossible attendance forecasts are neither zero nor invented', () => {
   assert.deepEqual(attendance(0, 0, 75), { percent: null, status: 'No records', recover: null, miss: null });
   assert.deepEqual(attendance(2, 3, 100), { percent: 2 / 3 * 100, status: 'At risk', recover: null, miss: 0 });
@@ -76,4 +91,16 @@ test('correcting a scheduled record keeps its original identity and audit histor
   assert.equal(next[0].history[0].status, 'Present');
   assert.equal(subjectAttendance({ records }, subject).percent, 80);
   assert.equal(subjectAttendance({ records: next }, subject).percent, 60);
+});
+
+test('cancelled occurrences contribute neither held classes nor absences', () => {
+  const subject = { id: 's', threshold: 75 };
+  const entry = { date: '2026-04-06', subjectId: 's', eventId: 'one', status: 'Absent' };
+  const cancelled = upsertRecord(upsertRecord([], entry), { ...entry, status: 'Cancelled' });
+  assert.equal(cancelled[0].history[0].status, 'Absent');
+  assert.deepEqual(subjectAttendance({ records: cancelled }, subject), {
+    present: 0, held: 0, ...attendance(0, 0, 75),
+  });
+  const separate = upsertRecord(cancelled, { ...entry, eventId: 'two', status: 'Present' });
+  assert.equal(subjectAttendance({ records: separate }, subject).percent, 100);
 });

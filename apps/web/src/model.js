@@ -2,6 +2,7 @@ export const ZONE = 'Asia/Kolkata';
 export const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 export const COLORS = ['violet', 'blue', 'mint', 'amber', 'rose'];
 export const STATUSES = ['Not started', 'In progress', 'Completed', 'Cancelled'];
+export const ATTENDANCE_STATUSES = ['Present', 'Absent', 'Cancelled'];
 export const TASK_TYPES = ['Assignment', 'Homework', 'Project', 'Lab', 'Reading', 'Revision', 'Personal task', 'Exam'];
 export const uid = () => crypto.randomUUID();
 
@@ -28,9 +29,10 @@ export const timeLabel = (time) => {
 
 export function scheduleFor(state, date) {
   return state.events.filter((event) =>
-    (event.date ? event.date === date : event.day === dayOf(date)) &&
+    (event.date ? event.date === date : event.day === dayOf(date) &&
+      (!state.profile.termStart || date >= state.profile.termStart) && (!state.profile.termEnd || date <= state.profile.termEnd)) &&
     !event.skipped?.includes(date) &&
-    state.subjects.some((subject) => subject.id === event.subjectId && !subject.archived)
+    (event.kind === 'Break' || state.subjects.some((subject) => subject.id === event.subjectId && !subject.archived))
   ).sort((a, b) => a.start.localeCompare(b.start));
 }
 
@@ -62,13 +64,18 @@ export function attendance(attended, held, threshold) {
 export function subjectAttendance(state, subject) {
   const records = state.records.filter((record) => record.subjectId === subject.id);
   const present = (subject.baselinePresent ?? 0) + records.filter((record) => record.status === 'Present').length;
-  const held = (subject.baselineHeld ?? 0) + records.length;
+  const held = (subject.baselineHeld ?? 0) + records.filter((record) => ['Present', 'Absent'].includes(record.status)).length;
   return { present, held, ...attendance(present, held, subject.threshold) };
 }
 
+export function matchingRecord(records, input) {
+  return records.find((record) => input.id === record.id) ||
+    (input.eventId ? records.find((record) => record.eventId === input.eventId && record.date === input.date) : undefined);
+}
+export const occurrenceLabel = (event) => event ? timeLabel(event.start) + ' – ' + timeLabel(event.end) + ' · ' + event.kind : '';
+
 export function upsertRecord(records, input, now = new Date().toISOString()) {
-  const previous = records.find((record) => input.id === record.id ||
-    (input.eventId && record.eventId === input.eventId && record.date === input.date));
+  const previous = matchingRecord(records, input);
   if (!previous) return [...records, { ...input, id: input.id || uid(), createdAt: now, history: [] }];
   if (['subjectId', 'date', 'eventId', 'status'].every((key) => previous[key] === input[key])) return records;
   const before = Object.fromEntries(['subjectId', 'date', 'eventId', 'status'].map((key) => [key, previous[key]]));

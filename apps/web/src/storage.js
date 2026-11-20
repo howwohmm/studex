@@ -37,5 +37,6 @@ async function withFiles(mode, run) {
 }
 export const putFile = (id, file) => withFiles('readwrite', (store) => store.put(file, id));
 export const getFile = (id) => withFiles('readonly', (store) => store.get(id));
+export const getFileKeys = () => withFiles('readonly', (store) => store.getAllKeys());
 export const deleteFile = (id) => withFiles('readwrite', (store) => store.delete(id));
 export const clearFiles = () => withFiles('readwrite', (store) => store.clear());

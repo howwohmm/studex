@@ -2,7 +2,7 @@ import {
   ArrowDownToLine, ArrowUpRight, BookOpen, CalendarDays, ClipboardList, FileUp,
   GraduationCap, ListTodo, Plus, Sparkles, Target, TrendingUp,
 } from 'lucide-react';
-import { activeTask, niceDate, orderedTasks, scheduleFor, shiftDate, subjectAttendance } from './model.js';
+import { activeTask, niceDate, orderedTasks, overlaps, scheduleFor, shiftDate, subjectAttendance } from './model.js';
 import { Badge, Button, Empty, EventRow, PanelHead, TaskRow, TextLink, Tile } from './ui.jsx';
 
 function HeroArt() {
@@ -36,46 +36,64 @@ function HeroArt() {
 export default function Overview({ state, today, go, open, toggleTask }) {
   const subjectFor = (id) => state.subjects.find((item) => item.id === id);
   const events = scheduleFor(state, today);
+  const classCount = events.filter((event) => event.kind !== 'Break' &&
+    !state.records.some((record) => record.eventId === event.id && record.date === today && record.status === 'Cancelled')).length;
   const tasks = orderedTasks(state.tasks.filter(activeTask));
   const assignments = tasks.filter((task) => task.type !== 'Exam');
   const attended = state.subjects.filter((s) => !s.archived).map((subject) => ({ ...subject, ...subjectAttendance(state, subject) }));
   const atRisk = attended.filter((s) => s.status === 'At risk').length;
+  const health = [...attended].sort((a, b) => (a.held ? a.percent - a.threshold : Infinity) - (b.held ? b.percent - b.threshold : Infinity));
   const totals = attended.reduce((sum, row) => ({ present: sum.present + row.present, held: sum.held + row.held }), { present: 0, held: 0 });
   const date = niceDate(today, { weekday: 'long', day: 'numeric', month: 'long' });
   const name = state.profile.name.trim().split(/\s+/)[0];
   const due = assignments.filter((item) => item.due >= today && item.due <= shiftDate(today, 7)).length;
   const nextExams = tasks.filter((item) => item.type === 'Exam' && item.due >= today);
+  const setup = !state.demo && !state.events.length;
+  const hasSubjects = attended.length > 0;
 
   return <div className="overview">
     <section className="hero">
       <HeroArt/>
       <div className="hero-copy">
-        <div className="hero-date"><Sparkles size={14} />{date}</div>
-        <h1>{name ? `Hello, ${name}.` : 'Make today count.'}</h1>
-        <p>{events.length ? `You have ${events.length} ${events.length === 1 ? 'class' : 'classes'} today.` : 'No classes on your timetable today.'} Here’s what’s happening in your academic workspace.</p>
-        <Button variant="hero-button" icon={CalendarDays} onClick={() => go('timetable')}>View timetable<ArrowUpRight size={15} /></Button>
+        <div className="hero-date"><Sparkles size={14} />{state.demo ? 'Example workspace · Sample data' : date}</div>
+        <h1>{state.demo ? 'Welcome to Studex.' : name ? `Hello, ${name}.` : 'Make today count.'}</h1>
+        <p>{state.demo ? 'Explore a sample semester, or start a workspace with your own subjects and classes.' :
+          classCount ? `You have ${classCount} ${classCount === 1 ? 'class' : 'classes'} today.` : 'No classes on your timetable today.'}</p>
+        {state.demo ? <Button variant="hero-button" icon={Plus} onClick={() => open({ type: 'reset', demo: false })}>Set up my semester<ArrowUpRight size={15} /></Button>
+          : <Button variant="hero-button" icon={CalendarDays} onClick={() => go('timetable')}>View timetable<ArrowUpRight size={15} /></Button>}
       </div>
     </section>
-    <div className="stats">
-      <button className="stat" onClick={() => go('timetable')}><Tile icon={CalendarDays}/><span><small>Classes today</small><strong>{events.length}</strong></span><ArrowUpRight size={16} className="stat-arrow"/></button>
+    {setup && <section className="panel setup-panel">
+      <h2>Set up your semester</h2>
+      <p>{hasSubjects ? 'Next, add your weekly timetable or import it from a file.' : 'Add your term dates, then create subjects or import a timetable to create them automatically.'}</p>
+      <div className="actions">
+        <Button icon={hasSubjects ? ArrowDownToLine : BookOpen} onClick={() => open({ type: hasSubjects ? 'import' : 'subject' })}>{hasSubjects ? 'Import timetable' : 'Add a subject'}</Button>
+        <Button variant="secondary" onClick={() => open({ type: hasSubjects ? 'event' : 'import', date: today })}>{hasSubjects ? 'Add a class' : 'Import instead'}</Button>
+        {!state.profile.edited && <Button variant="secondary" onClick={() => open({ type: 'profile' })}>Set up profile</Button>}
+      </div>
+    </section>}
+    {(!setup || hasSubjects || state.tasks.length > 0 || state.records.length > 0) && <><div className="stats">
+      <button className="stat" onClick={() => go('timetable')}><Tile icon={CalendarDays}/><span><small>Classes today</small><strong>{classCount}</strong></span><ArrowUpRight size={16} className="stat-arrow"/></button>
       <button className="stat" onClick={() => go('attendance')}><Tile icon={TrendingUp} color="mint"/><span><small>Overall attendance</small><strong>{totals.held ? (100 * totals.present / totals.held).toFixed(1) + '%' : '—'}</strong></span><ArrowUpRight size={16} className="stat-arrow"/></button>
-      <button className="stat" onClick={() => go('assignments')}><Tile icon={ClipboardList} color="amber"/><span><small>Due in the next 7 days</small><strong>{due}</strong></span><ArrowUpRight size={16} className="stat-arrow"/></button>
+      <button className="stat" onClick={() => go('assignments')}><Tile icon={ClipboardList} color="amber"/><span><small>Due within 7 days</small><strong>{due}</strong></span><ArrowUpRight size={16} className="stat-arrow"/></button>
     </div>
     <div className="overview-grid">
       <section className="panel">
         <PanelHead title="Today’s timetable" subtitle="Your classes at a glance"><TextLink onClick={() => go('timetable/week')}>Full week</TextLink></PanelHead>
         {events.length ? <div className="event-list">{events.map((item) => <EventRow key={item.id} item={item} subject={subjectFor(item.subjectId)}
           record={state.records.find((record) => record.eventId === item.id && record.date === today)}
+          conflict={events.some((entry) => overlaps(item, entry))}
           onClick={() => open({ type: 'class', item, date: today })}/>)}</div>
           : <Empty icon={CalendarDays} title="Nothing scheduled today" text="Add a class or import your timetable to get started." action="Add a class" onAction={() => open({ type: 'event', date: today })}/>}
       </section>
       <section className="panel">
         <PanelHead title="Attendance health" subtitle="Where you stand by subject"><TextLink onClick={() => go('attendance')}>View all</TextLink></PanelHead>
         {attended.length ? <div className="health">
-          {attended.slice(0, 4).map((s) => <div className="health-row" key={s.id}><div><strong>{s.title}</strong><span className={s.status === 'At risk' ? 'overdue' : ''}>{s.held ? s.percent.toFixed(1) + '%' : '—'}</span></div>
+          {health.slice(0, 4).map((s) => <div className="health-row" key={s.id}><div><strong>{s.title}</strong><span className={s.status === 'At risk' ? 'overdue' : ''}>{s.held ? s.percent.toFixed(1) + '%' : '—'}</span></div>
             <div className="progress" role="meter" aria-label={s.title + ' attendance'} aria-valuemin={0} aria-valuemax={100} aria-valuenow={s.percent ?? 0} aria-valuetext={s.held ? s.percent.toFixed(1) + '% attendance' : 'No attendance records'}>
               <span className={s.status === 'At risk' ? 'accent-rose' : 'accent-violet'} style={{ width: (s.percent ?? 0) + '%' }}/></div></div>)}
           {atRisk > 0 && <p className="health-note"><span />{atRisk} {atRisk === 1 ? 'subject is' : 'subjects are'} below the attendance target</p>}
+          {health.length > 4 && <p className="muted small">Showing 4 of {health.length} subjects.</p>}
         </div> : <Empty icon={Target} title="Track your attendance" text="Set a target for each subject and log classes as you go." action="Add a subject" onAction={() => open({ type: 'subject' })}/>}
       </section>
       <section className="panel">
@@ -86,11 +104,11 @@ export default function Overview({ state, today, go, open, toggleTask }) {
       <section className="panel">
         <PanelHead title="Quick actions" subtitle="Get something done in one step"/>
         <div className="quick-list">
-          {[['Log attendance', Target, 'violet', 'record'], ['New assignment', Plus, 'amber', 'task'], ['Upload material', FileUp, 'blue', 'upload'], ['Import timetable', ArrowDownToLine, 'mint', 'import']].map(([label, Icon, color, type]) =>
+          {[[hasSubjects ? 'Log attendance' : 'Add a subject', Target, 'violet', hasSubjects ? 'record' : 'subject'], ['New assignment', Plus, 'amber', 'task'], ['Upload material', FileUp, 'blue', 'upload'], ['Import timetable', ArrowDownToLine, 'mint', 'import']].map(([label, Icon, color, type]) =>
             <button key={type} onClick={() => open({ type, date: today })}><Tile icon={Icon} color={color}/><strong>{label}</strong><ArrowUpRight size={15}/></button>)}
         </div>
       </section>
-    </div>
+    </div></>}
     {nextExams.length > 0 && <section className="panel exam-strip"><Tile icon={GraduationCap} color="blue"/><div><strong>{nextExams[0].title}</strong><p>Next exam · {niceDate(nextExams[0].due)}</p></div>
       <Button variant="secondary" icon={BookOpen} onClick={() => open({ type: 'task', item: nextExams[0] })}>Exam details</Button></section>}
     {state.demo && <p className="demo-foot"><Badge color="violet">Example data</Badge> Try the workspace here or start your own from Settings.</p>}

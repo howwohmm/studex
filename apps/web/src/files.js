@@ -8,6 +8,7 @@ const types = {
 };
 const headerIs = (head, bytes, start = 0) => bytes.every((b, i) => head[start + i] === b);
 const ascii = (s) => Array.from(s, (c) => c.charCodeAt(0));
+class PdfPageLimitError extends Error {}
 
 export async function verifyFile(file) {
   const ext = file.name.split('.').at(-1).toLowerCase();
@@ -40,7 +41,7 @@ export async function pdfText(file, maxPages = 60) {
   const load = getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false, enableXfa: false });
   try {
     const doc = await load.promise;
-    if (doc.numPages > maxPages) throw new Error(`This PDF has more than ${maxPages} pages. Try a smaller export.`);
+    if (doc.numPages > maxPages) throw new PdfPageLimitError(`This PDF has more than ${maxPages} pages. Try a smaller export.`);
     const result = [];
     for (let number = 1; number <= doc.numPages; number++) {
       const page = await doc.getPage(number);
@@ -50,6 +51,17 @@ export async function pdfText(file, maxPages = 60) {
     }
     return { pages: doc.numPages, text: result.join('\n').trim() };
   } finally { await load.destroy(); }
+}
+
+export async function pdfMaterialText(file) {
+  if (!navigator.onLine && !navigator.serviceWorker?.controller) return { textState: 'pending' };
+  try {
+    const { pages, text } = await pdfText(file);
+    return { pages, text: text.slice(0, 40_000), textState: text ? 'indexed' : 'no-text' };
+  } catch (error) {
+    if (error instanceof PdfPageLimitError) throw error;
+    return { textState: navigator.onLine ? 'unavailable' : 'pending' };
+  }
 }
 
 export async function fileHash(file) {

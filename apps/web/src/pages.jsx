@@ -3,8 +3,8 @@ import {
   Archive, ArrowDownToLine, BookOpen, CalendarDays, ChartNoAxesCombined, ChevronLeft, ChevronRight,
   ClipboardList, FileText, Filter, FolderOpen, History, LayoutList, ListChecks, Plus, Search, Settings2, Upload,
 } from 'lucide-react';
-import { activeTask, niceDate, orderedTasks, scheduleFor, shiftDate, subjectAttendance, weekStart } from './model.js';
-import { Badge, Button, DayLabel, Empty, EventRow, IconButton, PageTitle, PanelHead, TaskRow, TextLink, Tile } from './ui.jsx';
+import { activeTask, niceDate, occurrenceLabel, orderedTasks, overlaps, scheduleFor, shiftDate, subjectAttendance, weekStart } from './model.js';
+import { attendanceColor, Badge, Button, DayLabel, Empty, EventRow, IconButton, PageTitle, PanelHead, TaskRow, TextLink, Tile } from './ui.jsx';
 
 const riskColor = (status) => ({ 'At risk': 'rose', 'Close to limit': 'amber', 'On track': 'mint' }[status] || 'neutral');
 const matches = (needle, ...values) => values.some((v) => String(v ?? '').toLowerCase().includes(needle.trim().toLowerCase()));
@@ -39,6 +39,7 @@ export function Timetable({ state, today, open, initialView = 'Day' }) {
           {classes.length ? <div className="event-list">{classes.map((item) =>
             <EventRow key={item.id} item={item} subject={state.subjects.find((s) => s.id === item.subjectId)}
               record={state.records.find((r) => r.eventId === item.id && r.date === date)}
+              conflict={classes.some((entry) => overlaps(item, entry))}
               onClick={() => open({ type: 'class', item, date })}/>)}</div>
             : view === 'Week' ? <p className="muted small">No classes scheduled.</p> :
               <Empty icon={CalendarDays} title="No classes scheduled" text="One-off events and weekly classes both show up here." action="Add a class" onAction={() => open({ type: 'event', date })}/>}
@@ -48,9 +49,9 @@ export function Timetable({ state, today, open, initialView = 'Day' }) {
   </>;
 }
 
-export function Attendance({ state, today, open }) {
+export function Attendance({ state, today, open, initialSubject = '' }) {
   const subjects = state.subjects.filter((subject) => !subject.archived);
-  const [filter, setFilter] = useState('');
+  const [filter, setFilter] = useState(initialSubject);
   const history = [...state.records].filter((r) => !filter || filter === r.subjectId)
     .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
   return <>
@@ -67,21 +68,27 @@ export function Attendance({ state, today, open }) {
           <div className="progress" aria-hidden="true"><span className={'accent-' + (info.status === 'At risk' ? 'rose' : subject.color)} style={{ width: (info.percent ?? 0) + '%' }}/></div>
           <p className="attendance-count">{info.present} attended · {info.held - info.present} missed · {info.held} held</p>
           <div className="forecast"><p>{!info.held ? 'Log a class to see your forecast.' : info.status === 'At risk'
-            ? info.recover === null ? 'A perfect target cannot be recovered after an absence.' : `Attend the next ${info.recover} ${info.recover === 1 ? 'class' : 'classes'} to reach your target.`
+            ? info.recover === null ? 'A perfect target cannot be recovered after an absence.' : `If enough classes remain, attend ${info.recover} in a row to reach your target.`
             : info.miss ? `You can miss ${info.miss} ${info.miss === 1 ? 'class' : 'classes'} in a row and stay eligible.` : 'Attend your next class to stay eligible.'}</p>
-            {info.held > 0 && <small>Based on recorded classes, with no other changes.</small>}</div>
+            {info.held > 0 && <small>A calculation based on recorded classes only; it doesn’t account for your timetable or term end.</small>}</div>
         </section>;
       })}
     </div> : <section className="panel"><Empty icon={ChartNoAxesCombined} title="No active subjects" text="Add a subject before you log attendance." action="Add a subject" onAction={() => open({ type: 'subject' })}/></section>}
-    <section className="panel history">
+    <section className="panel history attendance-history">
       <PanelHead title="Attendance history" subtitle="Review or correct individual records">
         <select aria-label="Filter attendance history by subject" value={filter} onChange={(e) => setFilter(e.target.value)}>
           <option value="">All subjects</option>{state.subjects.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
         </select>
       </PanelHead>
-      {history.length ? <div className="history-list">{history.map((item) => <button className="history-item" key={item.id} onClick={() => open({ type: 'record', item })}>
-        <Tile icon={History}/><span><strong>{state.subjects.find((s) => s.id === item.subjectId)?.title}</strong><small>{niceDate(item.date)}{item.history?.length ? ' · Corrected' : ''}</small></span>
-        <Badge color={item.status === 'Present' ? 'mint' : 'rose'}>{item.status}</Badge><ChevronRight size={16}/></button>)}</div>
+      {history.length ? <div className="history-list">{history.map((item) => {
+        const occurrence = occurrenceLabel(item.occurrence || state.events.find((entry) => entry.id === item.eventId));
+        const possibleDuplicate = !item.eventId && !item.extra && state.records.some((row) => row.eventId && row.subjectId === item.subjectId && row.date === item.date);
+        return <button className="history-item attendance-entry" key={item.id} onClick={() => open({ type: 'record', item })}>
+          <Tile icon={History}/><span><strong>{state.subjects.find((s) => s.id === item.subjectId)?.title}</strong>
+            <small>{niceDate(item.date)} · {occurrence || (item.eventId ? 'Scheduled class' : 'Extra class')}{item.history?.length ? ' · Corrected' : ''}</small>
+            {possibleDuplicate && <small className="missing-original">Check for a duplicate mark</small>}</span>
+          <Badge color={attendanceColor(item.status)}>{item.status}</Badge><ChevronRight size={16}/></button>;
+      })}</div>
         : <Empty icon={History} title="No individual records yet" text="Classes you mark present or absent appear here. Baseline counts are kept on the subject."/>}
     </section>
   </>;
@@ -115,7 +122,7 @@ export function Assignments({ state, today, open, toggleTask }) {
   </>;
 }
 
-export function Library({ state, open }) {
+export function Library({ state, open, missingOriginals }) {
   const [query, setQuery] = useState('');
   const [subject, setSubject] = useState('');
   const files = state.files.filter((file) => (!subject || subject === file.subjectId) && matches(query, file.title, file.name, file.text))
@@ -131,8 +138,9 @@ export function Library({ state, open }) {
           <option value="">All subjects</option>{state.subjects.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
         </select></div>
       </div>
-      {files.length ? <div className="history-list">{files.map((file) => <button className="history-item" key={file.id} onClick={() => open({ type: 'file', item: file })}>
-        <Tile icon={FileText} color={state.subjects.find((s) => s.id === file.subjectId)?.color ?? 'blue'}/><span><strong>{file.title}</strong><small>{file.name} · {niceDate(file.date)}</small></span>
+      {files.length ? <div className="history-list">{files.map((file) => <button className="history-item library-item" key={file.id} onClick={() => open({ type: 'file', item: file })}>
+        <Tile icon={FileText} color={state.subjects.find((s) => s.id === file.subjectId)?.color ?? 'blue'}/><span><strong>{file.title}</strong><small>{file.name} · {niceDate(file.date)}</small>
+          {missingOriginals.has(file.id) && <small className="missing-original">Original missing</small>}</span>
         <Badge>{state.subjects.find((s) => s.id === file.subjectId)?.title || 'Unfiled'}</Badge><ChevronRight size={16}/></button>)}</div>
         : <Empty icon={FolderOpen} title="No materials found" text="Upload notes, slides, or PDFs, or try a different search." action="Upload material" onAction={() => open({ type: 'upload', subjectId: subject })}/>}
     </section>
@@ -159,12 +167,17 @@ export function SubjectPage({ state, subject, today, go, open, toggleTask }) {
   const files = state.files.filter((f) => f.subjectId === subject.id);
   const tasks = orderedTasks(state.tasks.filter((t) => t.subjectId === subject.id));
   const units = subject.units ?? [];
+  const attendance = subjectAttendance(state, subject);
   return <>
     <TextLink onClick={() => go('subjects')}>All subjects</TextLink>
     <PageTitle label={subject.archived ? 'Archived subject' : subject.code || 'Subject'} title={subject.title} text={subject.description || 'Your coursework, materials and progress for this subject.'}>
       <Button icon={Settings2} variant="secondary" onClick={() => open({ type: 'subject', item: subject })}>Edit subject</Button>
       <Button icon={Plus} onClick={() => open({ type: 'task', subjectId: subject.id })}>Add assignment</Button>
     </PageTitle>
+    <section className="panel subject-attendance"><PanelHead title="Attendance" subtitle={attendance.held
+      ? attendance.percent.toFixed(1) + '% · ' + attendance.present + ' of ' + attendance.held + ' attended' : 'No held classes recorded'}>
+      <TextLink onClick={() => go('attendance/' + subject.id)}>View attendance</TextLink>
+    </PanelHead></section>
     <div className="overview-grid">
       <section className="panel"><PanelHead title="Coursework"><Tile icon={ClipboardList} color={subject.color}/></PanelHead>
         {tasks.length ? <div className="task-list">{tasks.map((task) => <TaskRow task={task} today={today} subject={subject} key={task.id}
@@ -188,7 +201,10 @@ export function Settings({ state, open }) {
     <div className="settings-grid">
       <section className="panel"><PanelHead title="Academic profile" subtitle="Used to personalise your workspace">
         <Button variant="secondary" icon={Settings2} onClick={() => open({ type: 'profile' })}>Edit profile</Button></PanelHead>
-        <dl className="details-list">{[['Name', profile.name], ['Institution', profile.university], ['Program', profile.program], ['Semester', profile.semester], ['Time zone', 'Asia/Kolkata']].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || 'Not set'}</dd></div>)}</dl>
+        <dl className="details-list">{[['Name', profile.name], ['Institution', profile.university], ['Program', profile.program], ['Semester', profile.semester],
+          ['Term start', profile.termStart && niceDate(profile.termStart, { day: 'numeric', month: 'short', year: 'numeric' })],
+          ['Term end', profile.termEnd && niceDate(profile.termEnd, { day: 'numeric', month: 'short', year: 'numeric' })],
+          ['Time zone', 'Asia/Kolkata']].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || 'Not set'}</dd></div>)}</dl>
       </section>
       <section className="panel local-settings"><PanelHead title={state.demo ? 'Example workspace' : 'Local workspace'} subtitle="Your changes and files are stored in this browser."/>
         <p>{state.demo ? 'The current workspace includes sample classes, subjects and deadlines. Start fresh when you’re ready to add your own.' : 'There is no sign-in or device sync in this preview. Clearing your browser’s site data removes your workspace.'}</p>

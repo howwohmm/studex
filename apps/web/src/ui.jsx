@@ -1,4 +1,4 @@
-import { cloneElement, useEffect, useId, useRef } from 'react';
+import { cloneElement, useId, useLayoutEffect, useRef } from 'react';
 import { ArrowRight, BookOpen, CalendarDays, ChevronRight, Clock3, MapPin, X } from 'lucide-react';
 import { niceDate, shiftDate, timeLabel } from './model.js';
 
@@ -11,6 +11,7 @@ export function IconButton({ icon: Icon, label, ...props }) {
 export function Badge({ children, color = 'neutral' }) {
   return <span className={'badge tint-' + color}>{children}</span>;
 }
+export const attendanceColor = (status) => status === 'Present' ? 'mint' : status === 'Absent' ? 'rose' : 'neutral';
 export function Tile({ icon: Icon, color = 'violet' }) {
   return <span className={'tile tint-' + color}><Icon size={19} aria-hidden="true" /></span>;
 }
@@ -29,10 +30,16 @@ export function PanelHead({ title, subtitle, children }) {
 }
 export function Dialog({ title, subtitle, close, busy, children }) {
   const ref = useRef(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const dialog = ref.current;
+    const opener = document.activeElement;
     dialog.showModal();
-    return () => dialog.close();
+    const firstField = dialog.querySelector('[data-initial-focus], .field input:not([type=file]):enabled, .field textarea:enabled, .field select:enabled');
+    firstField?.focus({ preventScroll: true });
+    return () => {
+      dialog.close();
+      if (opener instanceof HTMLElement && opener !== document.body && opener.isConnected) opener.focus({ preventScroll: true });
+    };
   }, []);
   return <dialog ref={ref} className="dialog" aria-labelledby="dialog-title"
     onCancel={(event) => { event.preventDefault(); if (!busy) close(); }}
@@ -54,12 +61,13 @@ export function SubjectOptions({ subjects, optional }) {
   return <><option value="">{optional ? 'No subject' : 'Select a subject'}</option>
     {subjects.map((s) => <option key={s.id} value={s.id}>{s.title}{s.archived ? ' (archived)' : ''}</option>)}</>;
 }
-export function EventRow({ item, subject, record, onClick }) {
+export function EventRow({ item, subject, record, conflict, onClick }) {
   return <button type="button" className="event-row" onClick={onClick}>
     <span className="event-time"><strong>{timeLabel(item.start)}</strong><small>{timeLabel(item.end)}</small></span>
     <span className={'event-line accent-' + (subject?.color ?? 'violet')} />
-    <span className="event-detail"><strong>{subject?.title ?? 'Class'}</strong><small><MapPin size={12} />{item.room || 'Room not set'} <span>·</span> {item.kind}</small></span>
-    <Badge color={record ? record.status === 'Present' ? 'mint' : 'rose' : subject?.color ?? 'neutral'}>{record?.status ?? item.kind}</Badge>
+    <span className="event-detail"><strong>{item.title || subject?.title || item.kind}</strong><small><MapPin size={12} />{item.room || 'Room not set'} <span>·</span> {item.kind}</small>
+      {conflict && <small className="overdue">Overlapping slots</small>}</span>
+    <Badge color={record ? attendanceColor(record.status) : subject?.color ?? 'neutral'}>{record?.status ?? item.kind}</Badge>
   </button>;
 }
 export function dueLabel(due, today) {

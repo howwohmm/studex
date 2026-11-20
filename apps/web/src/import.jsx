@@ -5,7 +5,7 @@ import { pdfText, verifyFile } from './files.js';
 import { parseTimetable } from './timetable-parser.js';
 import { Button, Dialog, Field } from './ui.jsx';
 
-const sample = 'day,start,end,subject,room\nMonday,09:00,10:00,Data Structures,Room 302\nWednesday,11:00,12:30,Database Systems,Lab 2\nFriday,14:00,15:00,Discrete Mathematics,Room 105';
+const sample = 'day,start,end,subject,room\nMonday,08:00,09:00,Data Structures,Room 302\nWednesday,16:00,17:30,Database Systems,Lab 2\nFriday,15:00,16:00,Discrete Mathematics,Room 105';
 const validTime = /^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/;
 
 export function ImportTimetable({ state, apply, close }) {
@@ -84,15 +84,19 @@ export function ImportTimetable({ state, apply, close }) {
       {review ? <div className="import-review">
         <p className="muted small">{rows.length} selected. Unrecognised lines are skipped. New subject names create new subjects.</p>
         {review.map((row, i) => <fieldset key={row.id} className="import-row">
-          <legend><label><input type="checkbox" checked={row.selected} onChange={(e) => edit(row.id, 'selected', e.target.checked)}/>Class {i + 1}</label></legend>
-          <div className="form-grid">
-            <Field label="Subject"><input maxLength={90} value={row.subject} disabled={!row.selected} onChange={(e) => edit(row.id, 'subject', e.target.value)}/></Field>
-            <Field label="Day"><select value={row.day} disabled={!row.selected} onChange={(e) => edit(row.id, 'day', +e.target.value)}>
+          <legend className="sr-only">Class {i + 1}</legend>
+          <label className="import-include"><input aria-label={`Class ${i + 1}`} type="checkbox" checked={row.selected} onChange={(e) => edit(row.id, 'selected', e.target.checked)}/></label>
+          <details>
+            <summary><span><strong>{row.subject || 'Unnamed subject'}</strong><small>{DAYS[row.day]} · {row.start}–{row.end}{row.room && ' · ' + row.room}</small></span><span>Edit</span></summary>
+            <div className="form-grid">
+            <Field label="Subject" wide><input maxLength={90} value={row.subject} onChange={(e) => edit(row.id, 'subject', e.target.value)}/></Field>
+            <Field label="Day" wide><select value={row.day} onChange={(e) => edit(row.id, 'day', +e.target.value)}>
               {DAYS.map((day, j) => <option value={j} key={day}>{day}</option>)}</select></Field>
-            <Field label="Starts"><input type="time" value={row.start} disabled={!row.selected} onChange={(e) => edit(row.id, 'start', e.target.value)}/></Field>
-            <Field label="Ends"><input type="time" value={row.end} disabled={!row.selected} onChange={(e) => edit(row.id, 'end', e.target.value)}/></Field>
-            <Field label="Room" wide><input maxLength={80} value={row.room ?? ''} disabled={!row.selected} onChange={(e) => edit(row.id, 'room', e.target.value)}/></Field>
-          </div>
+            <Field label="Starts"><input type="time" value={row.start} onChange={(e) => edit(row.id, 'start', e.target.value)}/></Field>
+            <Field label="Ends"><input type="time" value={row.end} onChange={(e) => edit(row.id, 'end', e.target.value)}/></Field>
+            <Field label="Room" wide><input maxLength={80} value={row.room ?? ''} onChange={(e) => edit(row.id, 'room', e.target.value)}/></Field>
+            </div>
+          </details>
         </fieldset>)}
         {conflict && <label className="warning"><CircleAlert size={16}/><input type="checkbox" checked={ackConflict} onChange={(e) => setAckConflict(e.target.checked)}/>Import even though some times overlap</label>}
       </div> : <>

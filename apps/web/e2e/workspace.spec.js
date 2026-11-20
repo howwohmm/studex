@@ -21,6 +21,25 @@ test('log and correct a scheduled class without duplicating attendance', async (
   await expect(dialog(page).getByText(/previously absent/)).toBeVisible();
 });
 
+test('attendance and timetable share one mark, and cancellation does not count', async ({ page }) => {
+  await page.goto('/#/attendance');
+  await page.getByRole('button', { name: 'Log attendance' }).click();
+  await dialog(page).getByLabel('Subject', { exact: true }).selectOption({ label: 'Data Structures' });
+  await expect(dialog(page).getByLabel('Class occurrence')).not.toHaveValue('');
+  await dialog(page).getByLabel('Status', { exact: true }).selectOption('Absent');
+  await dialog(page).getByRole('button', { name: 'Save', exact: true }).click();
+  await nav(page).getByRole('link', { name: 'Timetable' }).click();
+  await page.getByRole('button', { name: /Data Structures.*Absent/ }).click();
+  await dialog(page).getByRole('button', { name: 'Mark present' }).click();
+  await page.getByRole('button', { name: /Data Structures.*Present/ }).click();
+  await dialog(page).getByRole('button', { name: 'Mark cancelled' }).click();
+  await nav(page).getByRole('link', { name: 'Attendance' }).click();
+  await page.reload();
+  await expect(page.getByText('21 attended · 3 missed · 24 held')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Data Structures.*9:00 AM.*Lecture.*Cancelled/ })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: /Data Structures.*Absent/ })).toHaveCount(0);
+});
+
 test('create, complete, and find an assignment after reload', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('banner').getByRole('button', { name: 'New assignment' }).click();
@@ -34,9 +53,12 @@ test('create, complete, and find an assignment after reload', async ({ page }) =
   await page.reload();
   await page.getByRole('button', { name: 'Finished', exact: true }).click();
   await expect(page.getByRole('checkbox', { name: 'Reopen Write the lab report' })).toBeChecked();
-  await page.getByRole('checkbox', { name: 'Reopen Write the lab report' }).click();
-  await page.getByRole('button', { name: 'Open', exact: true }).click();
   await page.getByRole('button', { name: /Write the lab report/ }).click();
+  await dialog(page).getByLabel('Title', { exact: true }).fill('Write the updated lab report');
+  await dialog(page).getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Reopen Write the updated lab report' }).click();
+  await page.getByRole('button', { name: 'Open', exact: true }).click();
+  await page.getByRole('button', { name: /Write the updated lab report/ }).click();
   await expect(dialog(page).getByLabel('Status', { exact: true })).toHaveValue('In progress');
 });
 
@@ -51,7 +73,9 @@ test('review CSV changes before linking imported classes to the subject workspac
   await dialog(page).getByRole('button', { name: 'Review classes' }).click();
   await expect(preview(page)).toBeVisible();
   await dialog(page).getByRole('checkbox', { name: 'Class 2' }).uncheck();
-  await dialog(page).getByRole('group', { name: 'Class 1' }).getByLabel('Room').fill('Studio 12');
+  const first = dialog(page).getByRole('group', { name: 'Class 1' });
+  await first.locator('summary').click();
+  await first.getByLabel('Room').fill('Studio 12');
   await dialog(page).getByRole('button', { name: 'Import classes' }).click();
   await page.getByRole('button', { name: 'Week', exact: true }).click();
   await expect(page.getByRole('button', { name: /Computer Graphics.*Studio 12/ })).toHaveCount(1);
@@ -88,7 +112,7 @@ test('extract a timetable locally from a selectable-text PDF', async ({ page }) 
   await expect(dialog(page).getByLabel('Timetable text')).toHaveValue(/Signals and Systems/);
   await dialog(page).getByRole('button', { name: 'Review classes' }).click();
   await expect(preview(page)).toBeVisible();
-  await expect(dialog(page).getByLabel('Subject', { exact: true })).toHaveValue('Signals and Systems');
+  await expect(dialog(page).locator('summary')).toContainText('Signals and Systems');
 });
 
 test('read a timetable photo without a third-party request', async ({ page }) => {
@@ -109,7 +133,7 @@ test('read a timetable photo without a third-party request', async ({ page }) =>
   await expect(dialog(page).getByLabel('Timetable text')).toHaveValue(/Applied Physics/i, { timeout: 20_000 });
   await dialog(page).getByRole('button', { name: 'Review classes' }).click();
   await expect(preview(page)).toBeVisible();
-  await expect(dialog(page).getByLabel('Subject', { exact: true })).toHaveValue(/Applied Physics/i);
+  await expect(dialog(page).locator('summary')).toContainText(/Applied Physics/i);
   expect(external).toEqual([]);
 });
 
@@ -154,5 +178,86 @@ test('mobile navigation and settings let a student start a blank workspace', asy
   await page.reload();
   await page.getByRole('navigation', { name: 'Quick navigation' }).getByRole('link', { name: 'Overview' }).click();
   await expect(page.getByRole('heading', { name: 'Make today count.' })).toBeVisible();
-  await expect(page.getByText('Nothing scheduled today')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Set up your semester' })).toBeVisible();
+  await page.getByRole('button', { name: 'Add a subject', exact: true }).click();
+  await expect(dialog(page).getByLabel('Subject name')).toBeFocused();
+});
+
+test('phone dock makes actions reachable and attendance can be undone', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.goto('/');
+  const dock = page.getByRole('navigation', { name: 'Quick navigation' });
+  await expect(dock.getByRole('link', { name: 'Subjects' })).toBeVisible();
+  const add = dock.getByRole('button', { name: 'Quick actions' });
+  await add.click();
+  await dialog(page).getByRole('button', { name: 'New assignment' }).click();
+  await expect(dialog(page).getByLabel('Title', { exact: true })).toBeFocused();
+  await dialog(page).getByRole('button', { name: 'Cancel' }).click();
+  const today = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Today’s timetable' }) });
+  const target = today.getByRole('button', { name: /Data Structures/ });
+  await target.click();
+  await dialog(page).getByRole('button', { name: 'Mark present' }).click();
+  await expect(target).toContainText('Present');
+  const undo = page.getByRole('button', { name: 'Undo', exact: true });
+  const noticeBox = await undo.boundingBox();
+  const dockBox = await dock.boundingBox();
+  expect(noticeBox.y + noticeBox.height).toBeLessThanOrEqual(dockBox.y);
+  await undo.click();
+  await expect(target).not.toContainText('Present');
+  await expect(page.getByText('Attendance restored.')).toBeVisible();
+});
+
+test('workspace changes in another tab keep the open draft and restore keyboard focus', async ({ page, context }) => {
+  await page.goto('/');
+  const opener = page.getByRole('banner').getByRole('button', { name: 'New assignment' });
+  await opener.focus();
+  await page.keyboard.press('Enter');
+  const title = dialog(page).getByLabel('Title', { exact: true });
+  await expect(title).toBeFocused();
+  await title.fill('Draft title');
+  const other = await context.newPage();
+  await other.goto('/');
+  await other.getByRole('banner').getByRole('button', { name: 'New assignment' }).click();
+  await dialog(other).getByLabel('Title', { exact: true }).fill('Title saved in another tab');
+  await dialog(other).getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(dialog(other)).not.toBeVisible();
+  await expect(title).toHaveValue('Draft title');
+  await page.keyboard.press('Escape');
+  await expect(opener).toBeFocused();
+  await expect(page.getByText('Workspace updated in another tab.')).toBeVisible();
+});
+
+test('production workspace reloads and extracts PDF text offline after first load', async ({ page, context }) => {
+  await page.goto('/#/library');
+  await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
+  await context.setOffline(true);
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Library' })).toBeVisible();
+  await page.getByRole('button', { name: 'Upload material' }).click();
+  await uploadInput(page).setInputFiles({
+    name: 'lecture.pdf', mimeType: 'application/pdf', buffer: textPdf('Consecutive fractions'),
+  });
+  await dialog(page).getByRole('button', { name: 'Upload material', exact: true }).click();
+  await expect(page.getByText('Material uploaded.')).toBeVisible();
+  await page.getByRole('button', { name: 'Search Studex' }).click();
+  await expect(dialog(page).getByRole('textbox', { name: 'Search workspace' })).toBeFocused();
+  await page.keyboard.type('consecutive fractions');
+  await expect(dialog(page).getByRole('button', { name: /lecture.pdf/ })).toBeVisible();
+});
+
+test.describe('without a service worker', () => {
+  test.use({ serviceWorkers: 'block' });
+  test('an offline PDF is indexed after reconnection', async ({ page, context }) => {
+    await page.goto('/#/library');
+    await context.setOffline(true);
+    await page.getByRole('button', { name: 'Upload material' }).click();
+    await uploadInput(page).setInputFiles({
+      name: 'reader.pdf', mimeType: 'application/pdf', buffer: textPdf('Local search phrase'),
+    });
+    await dialog(page).getByRole('button', { name: 'Upload material', exact: true }).click();
+    await expect(page.getByText(/Text extraction will retry when you reconnect/)).toBeVisible();
+    await context.setOffline(false);
+    await page.getByRole('textbox', { name: 'Search the library' }).fill('Local search phrase');
+    await expect(page.getByRole('button', { name: /reader.pdf/ })).toBeVisible();
+  });
 });
