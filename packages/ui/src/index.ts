@@ -1,5 +1,7 @@
 export * from './tokens';
 export { ThemeProvider, useTheme, useScheme } from './theme';
+export { useReducedMotion } from './reduced-motion';
+export { ioniconsReady } from './icon-font';
 export { haptic } from './haptics';
 export { Text, type TextProps } from './components/Text';
 export { Button, IconButton } from './components/Button';

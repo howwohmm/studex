@@ -15,7 +15,7 @@ export default defineConfig({
   webServer: {
     command: 'node serve.mjs',
     url: 'http://127.0.0.1:4173',
-    timeout: 300_000,
+    timeout: 600_000,
     reuseExistingServer: false,
   },
   projects: [

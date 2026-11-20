@@ -2,6 +2,7 @@ import { SymbolView } from 'expo-symbols';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Platform, Text } from 'react-native';
+import { ioniconsReady } from '../icon-font';
 import { useTheme } from '../theme';
 import type { ThemeColors } from '../tokens';
 
@@ -54,8 +55,8 @@ export function Icon({
   const [fontLoaded, setFontLoaded] = useState(false);
   useEffect(() => {
     if (Platform.OS !== 'web') return;
-    // loadFont resolves immediately when the font is already cached.
-    void Ionicons.loadFont().then(() => setFontLoaded(true));
+    // Shared promise: resolves on success AND on failure (glyph still shows).
+    void ioniconsReady().then(() => setFontLoaded(true));
   }, []);
   if (Platform.OS === 'ios') {
     return <SymbolView name={mapping.sf} size={size} tintColor={resolved} />;

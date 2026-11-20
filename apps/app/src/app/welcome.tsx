@@ -9,12 +9,20 @@ import Animated, {
 import { router } from 'expo-router';
 import Head from 'expo-router/head';
 
-import { useReducedMotion } from '@/lib/reduced-motion';
-
 import { useSettled } from '@/lib/settled';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@studex/copy';
-import { useTheme, Text, Button, Icon, spacing, radii, type IconName } from '@studex/ui';
+import {
+  useTheme,
+  useScheme,
+  useReducedMotion,
+  Text,
+  Button,
+  Icon,
+  spacing,
+  radii,
+  type IconName,
+} from '@studex/ui';
 
 const FEATURES = [
   { icon: 'today', key: 'onboarding.feature.1' },
@@ -49,7 +57,8 @@ export default function WelcomeScreen() {
     const id = setTimeout(() => setAnimDone(true), 700);
     return () => clearTimeout(id);
   }, []);
-  const { settledProps } = useSettled(animDone);
+  const scheme = useScheme();
+  const { settledProps } = useSettled(animDone, [scheme]);
   return (
     <>
       <Head>

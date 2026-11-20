@@ -10,8 +10,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import Head from 'expo-router/head';
 
-import { useReducedMotion } from '@/lib/reduced-motion';
-
 import { useSettled } from '@/lib/settled';
 import { t } from '@studex/copy';
 import {
@@ -29,6 +27,8 @@ import {
 } from '@studex/core';
 import {
   useTheme,
+  useScheme,
+  useReducedMotion,
   Text,
   Card,
   Badge,
@@ -249,7 +249,8 @@ export default function TodayDemo() {
     return () => clearInterval(id);
   }, [pctNum, pctShared, reduce]);
 
-  const { settledProps } = useSettled(clockReady && (reduce || counted === pctNum));
+  const scheme = useScheme();
+  const { settledProps } = useSettled(clockReady && (reduce || counted === pctNum), [scheme]);
 
   useEffect(() => {
     if (!wasEligible.current && eligible) {

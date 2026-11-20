@@ -34,7 +34,7 @@ export function Button({
       : variant === 'tinted'
         ? theme.accentSoft
         : 'transparent';
-  const fg = variant === 'primary' ? theme.onAccent : theme.accent;
+  const fg = variant === 'primary' ? theme.onAccent : theme.accentText;
   const style: ViewStyle = {
     minHeight: 50,
     borderRadius: radii.md,

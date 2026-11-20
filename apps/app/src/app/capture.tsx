@@ -5,12 +5,13 @@ import { useSettled } from '@/lib/settled';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@studex/copy';
-import { useTheme, EmptyState, spacing } from '@studex/ui';
+import { useTheme, useScheme, EmptyState, spacing } from '@studex/ui';
 
 export default function CaptureScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { settledProps } = useSettled();
+  const scheme = useScheme();
+  const { settledProps } = useSettled(true, [scheme]);
   return (
     <>
       <Head>

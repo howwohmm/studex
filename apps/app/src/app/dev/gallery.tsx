@@ -24,6 +24,7 @@ import {
   Skeleton,
   GlassSurface,
   ThemeProvider,
+  useScheme,
   type TextVariant,
 } from '@studex/ui';
 
@@ -142,7 +143,8 @@ function Gallery({ scheme }: { scheme: 'light' | 'dark' }) {
 
 export default function GalleryScreen() {
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
-  const { settledProps } = useSettled();
+  const resolvedScheme = useScheme();
+  const { settledProps } = useSettled(true, [resolvedScheme]);
   return (
     <>
       <Head>

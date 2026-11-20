@@ -1,7 +1,7 @@
 import { ScrollView } from 'react-native';
 import Head from 'expo-router/head';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme, Text, spacing } from '@studex/ui';
+import { useTheme, useScheme, Text, spacing } from '@studex/ui';
 import type { ReactNode } from 'react';
 
 import { useSettled } from '@/lib/settled';
@@ -18,7 +18,8 @@ export function Screen({
 }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { settledProps } = useSettled(ready);
+  const scheme = useScheme();
+  const { settledProps } = useSettled(ready, [scheme]);
   return (
     <ScrollView
       {...settledProps}
