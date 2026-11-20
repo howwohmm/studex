@@ -1,17 +1,32 @@
 # Studex
 
-Studex is the daily academic companion for Indian college students.
+Timetable, attendance and study workspace for Indian college students — a personal academic
+operating system that starts with the 75% rule. Bengaluru · India · launching 2026 ·
+[studex.ohm.quest](https://studex.ohm.quest) · [@ohmdreams](https://twitter.com/ohmdreams)
 
-It answers one question every morning: **What do I have today?**
+## Status
 
-→ timetable parser (photo/PDF → Claude extracts everything)  
-→ subject folders  
-→ bunk tracker that applies the 75% rule
+Phase 0 (foundation) of the [delivery plan](docs/spec/08-delivery-plan.md). Built by Devin agents
+working from the [master spec](docs/spec/README.md); every change is reviewed against it.
 
-**Status:** pre-launch · 10 confirmed early users · Udyam registered
+## Repository
 
----
+| Path | What |
+|---|---|
+| `apps/app` | Expo Router universal app (iOS, Android, Web) |
+| `packages/` | Shared TypeScript packages (`packages/core`: attendance engine and domain logic) |
+| `extraction-lab/` | Timetable extraction benchmarks and findings (fixtures are private) |
+| `docs/spec/` | Product and engineering specification — the source of truth |
+| `docs/status/` | Repository audit, progress logs, open questions |
+| `docs/pitch/` | Pitch deck, business documents, grant applications |
 
-- Pitch deck: [studex-pitch-deck.pdf](./studex-pitch-deck.pdf)
-- Udyam certificate: [udyam-certificate.pdf](./udyam-certificate.pdf)
-- Docs: [01_problem.md](./01_problem.md) · [02_solution.md](./02_solution.md) · [04_gtm.md](./04_gtm.md) · [05_business_model.md](./05_business_model.md) · [06_market.md](./06_market.md) · [08_one_pager.md](./08_one_pager.md)
+## Run it
+
+Requires Node 24.22.3 (v22.13+ required by Expo SDK 57) and pnpm 12.20.0.
+
+```sh
+pnpm install
+pnpm web        # or: pnpm dev · pnpm ios · pnpm android
+pnpm typecheck
+pnpm test
+```

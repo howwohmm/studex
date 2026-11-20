@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(//Users/ohm_home/.zshrc)",
+      "Read(//Users/ohm_home/.zshenv)",
+      "Read(//Users/ohm_home/.zprofile)",
+      "Read(//Users/ohm_home/.config/**)",
+      "Read(//Users/ohm_home/projects/**/.env)",
+      "Read(//Users/ohm_home/projects/**/.env.*)",
+      "mcp__claude_ai_Autosend",
+      "WebFetch(domain:resend.com)",
+      "WebFetch(domain:api.resend.com)",
+      "WebFetch(domain:autosend.com)"
+    ]
+  }
+}

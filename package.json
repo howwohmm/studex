@@ -1,0 +1,20 @@
+{
+  "name": "studex",
+  "private": true,
+  "packageManager": "pnpm@12.20.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @studex/app start",
+    "web": "pnpm --filter @studex/app web",
+    "ios": "pnpm --filter @studex/app ios",
+    "android": "pnpm --filter @studex/app android",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "lint": "turbo run lint"
+  },
+  "devDependencies": {
+    "turbo": "2.11.11"
+  }
+}

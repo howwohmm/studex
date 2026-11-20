@@ -8,3 +8,4 @@ resumes from the last row and the last green commit, never from memory.
 | Date | Ticket | State | Branch | Last green commit | Next step |
 |---|---|---|---|---|---|
 | 2026-11-20 | P0-03 (#6) | in progress | ws/platform/P0-03-monorepo (local working copy studex-monorepo) | — | Expo app into apps/app, pnpm + Turborepo, pitch docs to docs/pitch, scrubbed agent rules |
+| 2026-11-20 | P0-03 (#6) | PR open | ws/platform/P0-03-monorepo | 2a4bef8 | Review + merge. Follow-ups: react-native 0.86.2 → 0.86.3 (expo-doctor); `@react-native/metro-config` peer resolves 0.88.1 where 0.86.2 is wanted |
