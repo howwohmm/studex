@@ -2,3 +2,7 @@
 .env.*
 .DS_Store
 *.xcodeproj
+node_modules/
+dist/
+playwright-report/
+test-results/

@@ -1,0 +1,32 @@
+{
+  "name": "studex-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "node --test src/*.test.js",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@fontsource-variable/dm-sans": "^5.2.8",
+    "@fontsource-variable/manrope": "^5.2.8",
+    "@tesseract.js-data/eng": "^1.0.0",
+    "lucide-react": "^0.468.0",
+    "pdfjs-dist": "~5.7.284",
+    "react": "^19.2.9",
+    "react-dom": "^19.2.9",
+    "tesseract.js": "~6.0.1",
+    "tesseract.js-core": "~6.1.2",
+    "wasm-feature-detect": "~1.10.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "~1.55.1",
+    "vite": "~7.3.8"
+  }
+}
