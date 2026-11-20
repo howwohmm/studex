@@ -142,11 +142,6 @@ college-rounded integer under `half_up_integer`, so it never contradicts the eli
 The `T = 10,000` impossibility shortcut applies to the `exact` policy only (a college that rounds
 can reach a rounded 100%).
 
-The max-possible value follows the policy's display rule (§5): floored under `exact`, the
-college-rounded integer under `half_up_integer`, so it never contradicts the eligibility verdict.
-The `T = 10,000` impossibility shortcut applies to the `exact` policy only (a college that rounds
-can reach a rounded 100%).
-
 ### 6.5 Not started (H = 0)
 "No classes yet." If R is known, forecast panel: "You can miss up to {floor((10,000 − T)·R /
 10,000)} of the {R} classes this sem." (**new copy — needs Ohm's approval**).
