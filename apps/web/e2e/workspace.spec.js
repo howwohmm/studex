@@ -289,6 +289,25 @@ test('restore a missing material original and clean up bytes when workspace meta
   expect(await originalKeys(page)).toHaveLength(1);
 });
 
+test('an upload rolls back its original when workspace storage is full without Web Locks', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'locks', { value: undefined });
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (key === 'studex-workspace-v1') throw new DOMException('Workspace is full', 'QuotaExceededError');
+      return original.call(this, key, value);
+    };
+  });
+  await page.goto('/#/library');
+  await page.getByRole('button', { name: 'Upload material', exact: true }).click();
+  await uploadInput(page).setInputFiles({
+    name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('Course notes'),
+  });
+  await dialog(page).getByRole('button', { name: 'Upload material', exact: true }).click();
+  await expect(dialog(page).getByRole('alert')).toHaveText(/Could not save to this browser/);
+  expect(await originalKeys(page)).toEqual([]);
+});
+
 test('mobile navigation and settings let a student start a blank workspace', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');

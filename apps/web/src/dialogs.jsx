@@ -287,14 +287,19 @@ function UploadDialog({ action, state, today, apply, close }) {
           : details.textState === 'unavailable' ? 'PDF saved, but its text couldn’t be read.'
           : details.textState === 'no-text' ? 'PDF saved. No searchable text was found.' : 'Material uploaded.';
         await putFile(details.id, file);
-        const saved = apply((current) => {
-          if (current.files.some((item) => item.hash === hash)) throw new Error('This file is already in your library.');
-          if (details.subjectId && !current.subjects.some((subject) => subject.id === details.subjectId)) {
-            throw new Error('The selected subject no longer exists. Choose another subject.');
-          }
-          return { ...current, files: [...current.files, details] };
-        }, notice);
-        if (!saved) throw new Error('Could not save to this browser. Check available storage and try again.');
+        let saved = false;
+        try {
+          saved = apply((current) => {
+            if (current.files.some((item) => item.hash === hash)) throw new Error('This file is already in your library.');
+            if (details.subjectId && !current.subjects.some((subject) => subject.id === details.subjectId)) {
+              throw new Error('The selected subject no longer exists. Choose another subject.');
+            }
+            return { ...current, files: [...current.files, details] };
+          }, notice);
+          if (!saved) throw new Error('Could not save to this browser. Check available storage and try again.');
+        } finally {
+          if (!saved && !loadWorkspace()?.files.some((item) => item.id === details.id)) await deleteFile(details.id);
+        }
       });
     } catch (err) { setError(err.message || 'Could not store this file.'); }
     finally { setBusy(false); }
