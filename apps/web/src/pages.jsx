@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Archive, ArrowDownToLine, BookOpen, CalendarDays, ChartNoAxesCombined, ChevronLeft, ChevronRight,
   ClipboardList, FileText, Filter, FolderOpen, History, LayoutList, ListChecks, Plus, Search, Settings2, Upload,
 } from 'lucide-react';
-import { activeTask, niceDate, occurrenceLabel, orderedTasks, overlaps, remainingClasses, scheduleFor, shiftDate, subjectAttendance, weekStart } from './model.js';
+import { activeTask, niceDate, occurrenceLabel, orderedTasks, overlaps, remainingClasses, scheduleFor, shiftDate, subjectAttendance, timeKey, weekStart } from './model.js';
 import { attendanceColor, Badge, Button, DayLabel, Empty, EventRow, IconButton, PageTitle, PanelHead, TaskRow, TextLink, Tile } from './ui.jsx';
 
 const riskColor = (status) => ({ 'At risk': 'rose', 'Close to limit': 'amber', 'On track': 'mint' }[status] || 'neutral');
@@ -24,7 +24,7 @@ function AttendanceForecast({ info, remaining, termEnd }) {
     advice = canMiss ? `You can miss ${classCount(canMiss)} in a row and stay eligible.` : 'Attend your next class to stay eligible.';
   }
   return <div className="forecast"><p>{advice}</p>
-    {remaining > 0 && <small>{classCount(remaining)} left on the timetable{termEnd ? ' this term' : ''}, including unmarked classes today.</small>}
+    {remaining > 0 && <small>{classCount(remaining)} left on the timetable{termEnd ? ' this term' : ''}.</small>}
   </div>;
 }
 
@@ -71,6 +71,13 @@ export function Timetable({ state, today, open, initialView = 'Day' }) {
 export function Attendance({ state, today, open, initialSubject = '' }) {
   const subjects = state.subjects.filter((subject) => !subject.archived);
   const [filter, setFilter] = useState(initialSubject);
+  const [time, setTime] = useState(() => timeKey());
+  useEffect(() => {
+    const refresh = () => setTime(timeKey());
+    const interval = setInterval(refresh, 30_000);
+    window.addEventListener('focus', refresh);
+    return () => { clearInterval(interval); window.removeEventListener('focus', refresh); };
+  }, []);
   const history = [...state.records].filter((r) => !filter || filter === r.subjectId)
     .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
   return <>
@@ -86,7 +93,7 @@ export function Attendance({ state, today, open, initialSubject = '' }) {
           <div className="attendance-value"><strong>{info.held ? info.percent.toFixed(1) + '%' : '—'}</strong><Badge color={riskColor(info.status)}>{info.status}</Badge></div>
           <div className="progress" aria-hidden="true"><span className={'accent-' + (info.status === 'At risk' ? 'rose' : subject.color)} style={{ width: (info.percent ?? 0) + '%' }}/></div>
           <p className="attendance-count">{info.present} attended · {info.held - info.present} missed · {info.held} held</p>
-          <AttendanceForecast info={info} remaining={remainingClasses(state, subject.id, today)} termEnd={state.profile.termEnd}/>
+          <AttendanceForecast info={info} remaining={remainingClasses(state, subject.id, today, time)} termEnd={state.profile.termEnd}/>
         </section>;
       })}
     </div> : <section className="panel"><Empty icon={ChartNoAxesCombined} title="No active subjects" text="Add a subject before you log attendance." action="Add a subject" onAction={() => open({ type: 'subject' })}/></section>}

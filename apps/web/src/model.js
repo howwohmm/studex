@@ -11,6 +11,8 @@ export function dateKey(date = new Date()) {
   const get = (type) => parts.find((part) => part.type === type).value;
   return [get('year'), get('month'), get('day')].join('-');
 }
+const clock = new Intl.DateTimeFormat('en-GB', { timeZone: ZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+export const timeKey = (date = new Date()) => clock.format(date);
 
 function dateAt(key) { return new Date(key + 'T12:00:00Z'); }
 export function shiftDate(key, days) {
@@ -68,7 +70,7 @@ export function subjectAttendance(state, subject) {
   return { present, held, ...attendance(present, held, subject.threshold) };
 }
 
-export function remainingClasses(state, subjectId, today) {
+export function remainingClasses(state, subjectId, today, time = '00:00') {
   const { termStart, termEnd } = state.profile;
   const from = termStart && termStart > today ? termStart : today;
   if (termEnd && termEnd < from) return 0;
@@ -83,11 +85,12 @@ export function remainingClasses(state, subjectId, today) {
   for (const event of state.events) {
     if (event.subjectId !== subjectId || event.kind === 'Break') continue;
     const excluded = new Set([...(event.skipped ?? []), ...(marked.get(event.id) ?? [])]);
+    const availableFrom = from === today && event.end <= time ? shiftDate(from, 1) : from;
     if (event.date) {
-      if (event.date >= from && (!termEnd || event.date <= termEnd) && !excluded.has(event.date)) remaining++;
+      if (event.date >= availableFrom && (!termEnd || event.date <= termEnd) && !excluded.has(event.date)) remaining++;
     } else {
       if (!termEnd) return null;
-      const first = shiftDate(from, (event.day - dayOf(from) + 7) % 7);
+      const first = shiftDate(availableFrom, (event.day - dayOf(availableFrom) + 7) % 7);
       if (first > termEnd) continue;
       remaining += 1 + Math.floor((dateAt(termEnd) - dateAt(first)) / (7 * 86400000));
       for (const date of excluded) {

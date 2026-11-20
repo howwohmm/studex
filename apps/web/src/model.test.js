@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { attendance, dateKey, freshState, overlaps, remainingClasses, scheduleFor, shiftDate, subjectAttendance, taskDeadlines, taskKey, upsertRecord, weekStart } from './model.js';
+import { attendance, dateKey, freshState, overlaps, remainingClasses, scheduleFor, shiftDate, subjectAttendance, taskDeadlines, taskKey, timeKey, upsertRecord, weekStart } from './model.js';
 
 test('date keys, calendar weeks and day arithmetic use Indian civil dates', () => {
   assert.equal(dateKey(new Date('2026-01-31T18:29:59Z')), '2026-01-31');
   assert.equal(dateKey(new Date('2026-01-31T18:30:00Z')), '2026-02-01');
+  assert.equal(timeKey(new Date('2026-01-31T18:30:00Z')), '00:00');
   assert.equal(weekStart('2026-02-01'), '2026-01-26');
   assert.equal(shiftDate('2028-02-28', 1), '2028-02-29');
 });
@@ -84,8 +85,8 @@ test('remaining classes count only unmarked timetable occurrences within the ter
   const state = {
     profile: { termStart: '2026-04-06', termEnd: '2026-04-20' },
     events: [
-      { id: 'weekly', subjectId: 's', day: 1, skipped: ['2026-04-13'] },
-      { id: 'marked', subjectId: 's', day: 1 },
+      { id: 'weekly', subjectId: 's', day: 1, end: '10:00', skipped: ['2026-04-13'] },
+      { id: 'marked', subjectId: 's', day: 1, end: '12:00' },
       { id: 'once', subjectId: 's', date: '2026-04-15' },
       { id: 'before', subjectId: 's', date: '2026-04-05' },
       { id: 'after', subjectId: 's', date: '2026-04-21' },
@@ -101,6 +102,8 @@ test('remaining classes count only unmarked timetable occurrences within the ter
   };
   assert.equal(remainingClasses(state, 's', '2026-04-05'), 4);
   assert.equal(remainingClasses(state, 's', '2026-04-20'), 2);
+  assert.equal(remainingClasses(state, 's', '2026-04-20', '10:00'), 1);
+  assert.equal(remainingClasses(state, 's', '2026-04-20', '12:00'), 0);
   assert.equal(remainingClasses(state, 's', '2026-04-21'), 0);
   assert.equal(remainingClasses({ ...state, profile: {} }, 's', '2026-04-05'), null);
   assert.equal(remainingClasses({ ...state, profile: {} }, 'other', '2026-04-05'), 1);

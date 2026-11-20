@@ -89,7 +89,7 @@ test('removing a class drops only its mark by default, while keeping marks is op
 });
 
 test('attendance advice is capped by classes left before term end and disappears when none remain', async ({ page }) => {
-  await page.clock.setFixedTime(new Date('2026-11-20T12:00:00Z'));
+  await page.clock.setFixedTime(new Date('2026-11-20T02:00:00Z'));
   await page.goto('/#/settings');
   await page.getByRole('button', { name: 'Edit profile' }).click();
   await dialog(page).getByLabel('Term end').fill('2026-11-20');
@@ -104,6 +104,9 @@ test('attendance advice is capped by classes left before term end and disappears
   await dialog(page).getByRole('button', { name: 'Mark cancelled' }).click();
   await nav(page).getByRole('link', { name: 'Attendance' }).click();
   await expect(card('Data Structures').getByText('No scheduled classes left this term.')).toBeVisible();
+  await page.clock.setFixedTime(new Date('2026-11-20T12:00:00Z'));
+  await page.reload();
+  await expect(card('Discrete Mathematics').getByText('No scheduled classes left this term.')).toBeVisible();
 });
 
 test('create, complete, and find an assignment after reload', async ({ page }) => {
