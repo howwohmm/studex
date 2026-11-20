@@ -1,4 +1,56 @@
+# dependencies
+node_modules/
+
+# secrets and personal agent files (D-013/D-014)
 .env
 .env.*
+!.env.example
+CLAUDE.local.md
+AGENTS.local.md
+.claude/settings.local.json
+
+# private extraction data
+extraction-lab/fixtures/
+extraction-lab/out/
+extraction-lab/recordings/
+extraction-lab/adapters/vision/visiontt
+
+# Python
+.venv*/
+__pycache__/
+*.pyc
+
+# build / test output
+coverage/
+dist/
+web-build/
+.turbo/
+*.tsbuildinfo
+/apps/app/expo-env.d.ts
+
+# Expo
+.expo/
+.metro-health-check*
+
+# generated native folders
+/apps/app/ios
+/apps/app/android
+
+# native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS / misc
 .DS_Store
 *.xcodeproj
