@@ -1,6 +1,6 @@
-import { assertPolicy, assertTally } from './validate.js';
-import { roundedPercentBig } from './eligibility.js';
-import type { AttendancePolicy, Tally } from './types.js';
+import { assertPolicy, assertTally } from './validate';
+import { roundedPercentBig } from './eligibility';
+import type { AttendancePolicy, Tally } from './types';
 
 export function displayPercent(
   t: Tally,

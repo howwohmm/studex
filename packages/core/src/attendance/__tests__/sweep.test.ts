@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { recovery, safeNowBudget } from '../index.js';
-import type { AttendancePolicy, Horizon } from '../index.js';
+import { recovery, safeNowBudget } from '../index';
+import type { AttendancePolicy, Horizon } from '../index';
 
 const R = 30;
 

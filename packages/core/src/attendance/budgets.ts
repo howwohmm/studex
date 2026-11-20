@@ -4,13 +4,13 @@ import {
   assertTally,
   assertUnits,
   floorDivBig,
-} from './validate.js';
-import { isEligible, roundedPercentBig } from './eligibility.js';
+} from './validate';
+import { isEligible, roundedPercentBig } from './eligibility';
 import type {
   AttendancePolicy,
   Horizon,
   Tally,
-} from './types.js';
+} from './types';
 
 export type Recovery =
   | { kind: 'not_started' }

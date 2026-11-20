@@ -1,31 +1,34 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useColorScheme } from 'react-native';
-
-import { Colors } from '@/constants/theme';
+import { t } from '@studex/copy';
+import { useScheme, colors } from '@studex/ui';
 
 export default function AppTabs() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+  const scheme = useScheme();
+  const theme = colors[scheme];
 
   return (
     <NativeTabs
-      backgroundColor={colors.background}
-      indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.text } }}>
+      tintColor={theme.accent}
+      labelStyle={{ selected: { color: theme.accent } }}>
       <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/home.png')}
-          renderingMode="template"
-        />
+        <NativeTabs.Trigger.Label>{t('tabs.today')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="sun.max" md="wb_sunny" />
       </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="explore">
-        <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
-          renderingMode="template"
-        />
+      <NativeTabs.Trigger name="subjects">
+        <NativeTabs.Trigger.Label>{t('tabs.subjects')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="books.vertical" md="menu_book" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="plan">
+        <NativeTabs.Trigger.Label>{t('tabs.plan')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="calendar" md="calendar_month" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="library">
+        <NativeTabs.Trigger.Label>{t('tabs.library')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="folder" md="folder" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="tutor">
+        <NativeTabs.Trigger.Label>{t('tabs.tutor')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="sparkles" md="auto_awesome" />
       </NativeTabs.Trigger>
     </NativeTabs>
   );

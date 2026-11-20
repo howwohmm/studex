@@ -1,1 +1,1 @@
-export * from './attendance/index.js';
+export * from './attendance/index';

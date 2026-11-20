@@ -1,5 +1,5 @@
-import { assertPolicy, assertTally } from './validate.js';
-import type { AttendancePolicy, Tally } from './types.js';
+import { assertPolicy, assertTally } from './validate';
+import type { AttendancePolicy, Tally } from './types';
 
 /** College-rounded integer percent under half_up_integer: floor((200A + H) / (2H)). */
 export function roundedPercentBig(A: bigint, H: bigint): bigint {

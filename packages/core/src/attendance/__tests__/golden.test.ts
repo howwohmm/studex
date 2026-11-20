@@ -9,7 +9,7 @@ import {
   safeNowBudget,
   tally,
   termEndForecast,
-} from '../index.js';
+} from '../index';
 import type {
   AttendancePolicy,
   Baseline,
@@ -17,7 +17,7 @@ import type {
   Mark,
   Tally,
   UpcomingOccurrence,
-} from '../index.js';
+} from '../index';
 
 const exact = (thresholdBp = 7500): AttendancePolicy => ({
   thresholdBp,

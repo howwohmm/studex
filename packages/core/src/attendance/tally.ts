@@ -5,7 +5,7 @@ import {
   assertTally,
   assertUnits,
   fail,
-} from './validate.js';
+} from './validate';
 import type {
   AttendancePolicy,
   Baseline,
@@ -13,7 +13,7 @@ import type {
   ExcusedMapping,
   Mark,
   Tally,
-} from './types.js';
+} from './types';
 
 const VALID_STATUSES = new Set(['attended', 'bunked', 'cancelled', 'excused']);
 const VALID_EXCUSED_KINDS = new Set(['on_duty', 'medical', 'other']);

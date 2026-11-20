@@ -8,14 +8,14 @@ import {
   safeNowBudget,
   tally,
   termEndForecast,
-} from '../index.js';
+} from '../index';
 import type {
   AttendancePolicy,
   Baseline,
   Horizon,
   Mark,
   Tally,
-} from '../index.js';
+} from '../index';
 
 const RUNS = { numRuns: 10_000 };
 
