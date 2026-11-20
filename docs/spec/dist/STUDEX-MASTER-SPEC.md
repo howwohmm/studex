@@ -93,7 +93,7 @@ These are **human-only** actions. Agents cannot and must not do them.
 | Asset | State | Use it for |
 |---|---|---|
 | Expo app repository (`studex`; local, not yet on GitHub) | Expo SDK 57 template: React Native 0.86.2, React 19.2.3, expo-router 57, Reanimated 4.5.1, React Compiler on, typed routes. EAS project `@ohmdreams/studex` (`e697e644-7daf-44b5-b8a8-1350e7de0900`), bundle/package `quest.ohm.studex` (permanent after first Play upload). Commits so far: initial scaffold, extraction lab, this spec. No backend. | The app shell becomes `apps/app` in Phase 0. |
-| Public repository [`howwohmm/studex`](https://github.com/howwohmm/studex) | Pitch documents, grant decks, the published copy of this spec, and [PR #1](https://github.com/howwohmm/studex/pull/1): a React/Vite web workspace prototype opened by a Devin cloud session on 2026-11-20. PR #1 predates this spec and diverges from ADR-002 (one Expo universal app). | Reconcile in P0-01: keep it as a web prototype, port its parser/model tests into `packages/core`, or rebase it onto ADR-002. |
+| Public repository [`howwohmm/studex`](https://github.com/howwohmm/studex) | Pitch documents, grant decks, the published copy of this spec, and [PR #1](https://github.com/howwohmm/studex/pull/1): a React/Vite web workspace prototype opened by a Devin cloud session on 2026-11-20 (now a draft). | Reference prototype only (D-011): port its parser tests in P1-05, then close it. See `docs/status/REPO_AUDIT.md`. |
 | `extraction-lab/` | Timetable extraction benchmarks: 4 real fixtures with ground truth, strict per-cell scorer `score_slots_strict.py`, written findings. The public copy carries only the written findings; fixtures and raw outputs stay in the app repository. | Extraction design and the CI gate (M17). Read `FINDINGS.md`, `BENCHMARK.md`, `VLM-VERDICT.md`. |
 | `docs/spec/reference/v1/` | The shipped native iOS v1.0 spec chain, locked copy, psychology brief, attendance engine and tests, RUAS keyF1 acceptance test. | Adopted parts per `reference/README.md`. |
 | Ohm's machine only | `studex-vault` (every prior attempt, decks, waitlist at studex.ohm.quest), `beeper-group-ingest` (WhatsApp group file ingestion prototype). | Not available to cloud agents. Ask Ohm if needed. |
@@ -3466,6 +3466,10 @@ and alerts live · Ohm's approval recorded.
 | D-008 | Onboarding order: value first, profile after the number (M02) | Spec | Accepted |
 | D-009 | Confirm UI for every machine-made data change (principle 2) | Spec | Accepted |
 | D-010 | Per-subject eligibility by default with honest mixed-state header (`05` §6.7) | Spec | Accepted (Q7, Q8) |
+| D-011 | Expo universal app is canonical; PR #1 (React/Vite web workspace) is a reference prototype, not merged (2026-11-20) | Ohm | Accepted |
+| D-012 | Code lives in the public repository `howwohmm/studex` (2026-11-20) | Ohm | Accepted |
+| D-013 | Personal agent rules stay local (`CLAUDE.local.md`, `.claude/settings.local.json`); public rule files are scrubbed (2026-11-20) | Ohm | Accepted |
+| D-014 | Real timetable fixtures and raw provider outputs stay private; CI reads them from a private source (2026-11-20) | Lead | Accepted |
 
 Append new rows with date, decision, owner and status; link the ADR when one exists.
 
