@@ -3484,6 +3484,7 @@ and alerts live · Ohm's approval recorded.
 | D-013 | Personal agent rules stay local (`CLAUDE.local.md`, `.claude/settings.local.json`); public rule files are scrubbed (2026-11-20) | Ohm | Accepted |
 | D-014 | Real timetable fixtures and raw provider outputs stay private; CI reads them from a private source (2026-11-20) | Lead | Accepted |
 | D-015 | Attendance spec clarified from PR #60's review: policy-aware forecasts and max-possible display, exact-only 100% shortcut, 1,000,000-unit input cap — merged as its own `spec:` PR (2026-11-20) | Ohm (delegated: "do what's right") | Accepted |
+| D-016 | ADR-020 amended: license allowlist fixed to MIT, Apache-2.0, BSD-2/3, ISC, MPL-2.0, 0BSD, CC0-1.0, Unlicense, BlueOak-1.0.0, Python-2.0; one data exception, caniuse-lite (CC-BY-4.0) (2026-11-20) | Lead + Ohm (delegated) | Accepted |
 
 Append new rows with date, decision, owner and status; link the ADR when one exists.
 

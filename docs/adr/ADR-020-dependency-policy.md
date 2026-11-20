@@ -18,7 +18,7 @@ mechanically; `scripts/check-licenses.mjs` implements this exact list.
 ### Exceptions
 - `caniuse-lite` (CC-BY-4.0) — browser-support data pulled in by
   Babel/Browserslist; data, not linked code, and the package carries its own
-  attribution. Approved by the lead 2026-11-20. Any new exception requires an
+  attribution. approved 2026-11-20 by the lead and by Ohm under his delegated authority ("do everything yourself"); recorded as D-016. Any new exception requires an
   ADR change.
 
 ## Evidence
