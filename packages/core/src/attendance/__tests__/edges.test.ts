@@ -9,14 +9,14 @@ import {
   simulate,
   tally,
   termEndForecast,
-} from '../index.js';
+} from '../index';
 import type {
   AttendancePolicy,
   Horizon,
   Mark,
   Tally,
   UpcomingOccurrence,
-} from '../index.js';
+} from '../index';
 
 const exact = (thresholdBp = 7500): AttendancePolicy => ({
   thresholdBp,

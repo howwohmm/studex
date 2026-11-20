@@ -18,3 +18,4 @@ new, written in the spec's voice, and ships to beta only until Ohm approves it (
 | 11 | Sync status (FR-SYNC-002) | "Changes saved on this phone" · "Couldn't sync. Retrying." | Draft (Ph2) |
 | 12 | Signed-in replacements for the local-only lines (`01` §11.3) | to be written in Ph2 | Not started |
 | 13 | Tutor (FR-TUT-004, -015) | "I couldn't find this in your materials." · "General explanation (not from your materials)" · "Tutor needs internet. Your notes and files are still here." | Draft (Ph4) |
+| 14 | Tabs, empty states, welcome (P0-07/08/09) | `tabs.*`, `plan/library/tutor.title` + `.empty`, `welcome.cta` ("Scan timetable"), `today.sweep`, `common.undo`, `row.budget.spare` / `row.budget.below`, `manual.placeholder`; dev-only: `demo.*` | Draft — see `packages/copy/src/catalog.ts` |

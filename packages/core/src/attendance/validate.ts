@@ -1,4 +1,4 @@
-import type { AttendancePolicy, Tally, Units } from './types.js';
+import type { AttendancePolicy, Tally, Units } from './types';
 
 export function fail(message: string): never {
   throw new RangeError(`attendance: ${message}`);

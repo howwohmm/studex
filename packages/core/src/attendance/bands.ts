@@ -1,6 +1,6 @@
-import { assertPolicy, assertTally, fail } from './validate.js';
-import { isEligible } from './eligibility.js';
-import type { AttendancePolicy, Tally } from './types.js';
+import { assertPolicy, assertTally, fail } from './validate';
+import { isEligible } from './eligibility';
+import type { AttendancePolicy, Tally } from './types';
 
 export const CLOSE_MARGIN_BP = 600;
 
