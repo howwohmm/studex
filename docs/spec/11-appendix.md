@@ -100,6 +100,10 @@
 | D-008 | Onboarding order: value first, profile after the number (M02) | Spec | Accepted |
 | D-009 | Confirm UI for every machine-made data change (principle 2) | Spec | Accepted |
 | D-010 | Per-subject eligibility by default with honest mixed-state header (`05` §6.7) | Spec | Accepted (Q7, Q8) |
+| D-011 | Expo universal app is canonical; PR #1 (React/Vite web workspace) is a reference prototype, not merged (2026-11-20) | Ohm | Accepted |
+| D-012 | Code lives in the public repository `howwohmm/studex` (2026-11-20) | Ohm | Accepted |
+| D-013 | Personal agent rules stay local (`CLAUDE.local.md`, `.claude/settings.local.json`); public rule files are scrubbed (2026-11-20) | Ohm | Accepted |
+| D-014 | Real timetable fixtures and raw provider outputs stay private; CI reads them from a private source (2026-11-20) | Lead | Accepted |
 
 Append new rows with date, decision, owner and status; link the ADR when one exists.
 
