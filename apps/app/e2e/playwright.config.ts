@@ -16,7 +16,7 @@ export default defineConfig({
     command: 'node serve.mjs',
     url: 'http://127.0.0.1:4173',
     timeout: 300_000,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
   },
   projects: [
     {

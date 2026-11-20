@@ -15,7 +15,7 @@ export default function RootLayout() {
   // ?scheme= from the browser after mount — never during render.
   const [forced, setForced] = useState<ColorScheme>();
   useEffect(() => {
-    if (Platform.OS !== 'web') return;
+    if (Platform.OS !== 'web' || !QA_ENABLED) return;
     const q = new URLSearchParams(location.search).get('scheme');
     // Microtask: applies before each screen's data-settled timer (macrotask).
     if (q === 'dark' || q === 'light') void Promise.resolve().then(() => setForced(q));

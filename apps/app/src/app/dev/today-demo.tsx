@@ -557,7 +557,13 @@ function ClassRow({
       <View style={{ flex: 1, gap: 2 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[8] }}>
           <Text variant="headline">{slot.subject.name}</Text>
-          {isNow ? <Badge label={t('today.badge.now')} color={theme.label.primary} /> : null}
+          {isNow ? (
+            <Badge
+              label={t('today.badge.now')}
+              color={theme.label.primary}
+              background={theme.bg.surface}
+            />
+          ) : null}
         </View>
         <Text variant="subhead" color="secondary" numberOfLines={1}>
           {slot.subject.room} · {slot.subject.kind}
