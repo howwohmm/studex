@@ -105,6 +105,7 @@
 | D-012 | Code lives in the public repository `howwohmm/studex` (2026-11-20) | Ohm | Accepted |
 | D-013 | Personal agent rules stay local (`CLAUDE.local.md`, `.claude/settings.local.json`); public rule files are scrubbed (2026-11-20) | Ohm | Accepted |
 | D-014 | Real timetable fixtures and raw provider outputs stay private; CI reads them from a private source (2026-11-20) | Lead | Accepted |
+| D-015 | Attendance spec clarified from PR #60's review: policy-aware forecasts and max-possible display, exact-only 100% shortcut, 1,000,000-unit input cap — merged as its own `spec:` PR (2026-11-20) | Ohm (delegated: "do what's right") | Accepted |
 
 Append new rows with date, decision, owner and status; link the ADR when one exists.
 

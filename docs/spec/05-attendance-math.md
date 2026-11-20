@@ -135,7 +135,12 @@ reachable if and only if attending every remaining class is eligible, and `maxSk
 largest number of occurrences (smallest units first) that can be skipped while staying eligible.
 
 ### 6.4 Honest impossibility (copy approved in psych.md)
-"{T}% isn't reachable this sem. Max possible: {floor(100·(A + R) / (H + R))}%. Each class raises it."
+"{T}% isn't reachable this sem. Max possible: {max}%. Each class raises it." — `{max}` is the attend-all percentage under the policy's display rule (below).
+
+The max-possible value follows the policy's display rule (§5): floored under `exact`, the
+college-rounded integer under `half_up_integer`, so it never contradicts the eligibility verdict.
+The `T = 10,000` impossibility shortcut applies to the `exact` policy only (a college that rounds
+can reach a rounded 100%).
 
 The max-possible value follows the policy's display rule (§5): floored under `exact`, the
 college-rounded integer under `half_up_integer`, so it never contradicts the eligibility verdict.
@@ -247,7 +252,7 @@ that encode D1–D6.
 
 ```ts
 export type BasisPoints = number;            // integer 0..10_000
-export type Units = number;                  // positive safe integer
+export type Units = number;                  // positive integer ≤ 1,000,000 (the cap keeps every search finite)
 export type MarkStatus = 'attended' | 'bunked' | 'cancelled' | 'excused';
 export type ExcusedKind = 'on_duty' | 'medical' | 'other';
 export type ExcusedMapping = 'present' | 'excluded' | 'absent';
@@ -286,7 +291,7 @@ export function recovery(t: Tally, h: Horizon, policy: AttendancePolicy): Recove
 export interface TermEndForecast {
   remaining: number; remainingUnits: number;
   maxSkippable: number; minToAttend: number;     // counts of occurrences; with mixed units, skip smallest units first
-  reachable: boolean; maxReachableDisplay: string; // floor(100·(A+R_u)/(H+R_u))
+  reachable: boolean; maxReachableDisplay: string; // attend-all % under the policy's display rule (§5, §6.4)
 }
 export function termEndForecast(t: Tally, h: Horizon, policy: AttendancePolicy): TermEndForecast | null; // null when term end unknown, or nothing held and nothing left
 export function copyBand(t: Tally, k: number | null, policy: AttendancePolicy): 'above' | 'close' | 'below' | 'not_started';
