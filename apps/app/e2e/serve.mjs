@@ -1,18 +1,22 @@
-// Builds (once) and serves the QA web export for Playwright.
-// EXPO_PUBLIC_QA=1 is baked in at export time.
+// Builds and serves the QA web export for Playwright.
+// EXPO_PUBLIC_QA=1 is baked in at export time. Every run re-exports so tests never see a stale
+// bundle; set E2E_REUSE_EXPORT=1 to reuse an existing export while iterating locally.
 import { createServer } from 'node:http';
 import { existsSync, statSync, readFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+const appRoot = fileURLToPath(new URL('..', import.meta.url));
 const dir = join(fileURLToPath(new URL('.', import.meta.url)), 'dist');
-if (!existsSync(join(dir, 'index.html'))) {
+const reuse = process.env.E2E_REUSE_EXPORT === '1' && existsSync(join(dir, 'index.html'));
+if (!reuse) {
   console.log('[e2e] exporting QA web build...');
-  execSync(
-    'npx expo export --platform web --clear --output-dir ' + dir,
-    { stdio: 'inherit', env: { ...process.env, EXPO_PUBLIC_QA: '1', CI: '1' } },
-  );
+  execSync('npx expo export --platform web --clear --output-dir ' + dir, {
+    cwd: appRoot,
+    stdio: 'inherit',
+    env: { ...process.env, EXPO_PUBLIC_QA: '1', CI: '1' },
+  });
 }
 
 const MIME = {
