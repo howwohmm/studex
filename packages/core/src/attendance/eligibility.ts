@@ -2,10 +2,8 @@ import { assertPolicy, assertTally } from './validate.js';
 import type { AttendancePolicy, Tally } from './types.js';
 
 /** College-rounded integer percent under half_up_integer: floor((200A + H) / (2H)). */
-export function roundedPercent(t: Tally): number {
-  const A = BigInt(t.attended);
-  const H = BigInt(t.held);
-  return Number((200n * A + H) / (2n * H));
+export function roundedPercentBig(A: bigint, H: bigint): bigint {
+  return (200n * A + H) / (2n * H);
 }
 
 export function isEligible(t: Tally, policy: AttendancePolicy): boolean | null {
@@ -18,6 +16,5 @@ export function isEligible(t: Tally, policy: AttendancePolicy): boolean | null {
   if (policy.rounding === 'exact') {
     return 10_000n * A >= T * H;
   }
-  const p = (200n * A + H) / (2n * H);
-  return 100n * p >= T;
+  return 100n * roundedPercentBig(A, H) >= T;
 }

@@ -5,7 +5,7 @@ import {
   assertUnits,
   floorDivBig,
 } from './validate.js';
-import { isEligible } from './eligibility.js';
+import { isEligible, roundedPercentBig } from './eligibility.js';
 import type {
   AttendancePolicy,
   Horizon,
@@ -39,7 +39,7 @@ function assertHorizon(h: Horizon): void {
 /** Integer display of a derived tally under the policy's display rule (§5). */
 function policyPercent(A: bigint, H: bigint, policy: AttendancePolicy): string {
   if (policy.rounding === 'exact') return String((100n * A) / H);
-  return String((200n * A + H) / (2n * H));
+  return String(roundedPercentBig(A, H));
 }
 
 function eligibleBig(A: bigint, H: bigint, policy: AttendancePolicy): boolean {
@@ -47,8 +47,7 @@ function eligibleBig(A: bigint, H: bigint, policy: AttendancePolicy): boolean {
   if (policy.rounding === 'exact') {
     return 10_000n * A >= T * H;
   }
-  const p = (200n * A + H) / (2n * H);
-  return 100n * p >= T;
+  return 100n * roundedPercentBig(A, H) >= T;
 }
 
 /**

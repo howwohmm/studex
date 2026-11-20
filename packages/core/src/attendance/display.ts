@@ -1,5 +1,5 @@
 import { assertPolicy, assertTally } from './validate.js';
-import { roundedPercent } from './eligibility.js';
+import { roundedPercentBig } from './eligibility.js';
 import type { AttendancePolicy, Tally } from './types.js';
 
 export function displayPercent(
@@ -10,11 +10,11 @@ export function displayPercent(
   assertPolicy(policy);
   assertTally(t);
   if (t.held === 0) return null;
-  if (policy.rounding === 'half_up_integer') {
-    return String(roundedPercent(t));
-  }
   const A = BigInt(t.attended);
   const H = BigInt(t.held);
+  if (policy.rounding === 'half_up_integer') {
+    return String(roundedPercentBig(A, H));
+  }
   if (decimals === 0) {
     return String((100n * A) / H);
   }

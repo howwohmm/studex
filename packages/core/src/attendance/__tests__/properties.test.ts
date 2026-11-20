@@ -55,6 +55,8 @@ const bunkedMark = (units = 1): Mark => ({
   units,
 });
 
+const attendedMark = (units = 1): Mark => ({ ...bunkedMark(units), status: 'attended' });
+
 const eligibleExact = (A: number, H: number, T: number): boolean =>
   10_000 * A >= T * H;
 
@@ -103,11 +105,13 @@ describe('properties §11.2', () => {
   it('P(b) / FR-ATT-004: attending never decreases and bunking never increases the floored percent', () => {
     fc.assert(
       fc.property(arbNonZeroTally, (tl) => {
-        const before = Math.floor((1000 * tl.attended) / tl.held);
-        const afterAttend = Math.floor((1000 * (tl.attended + 1)) / (tl.held + 1));
-        const afterBunk = Math.floor((1000 * tl.attended) / (tl.held + 1));
-        expect(afterAttend).toBeGreaterThanOrEqual(before);
-        expect(afterBunk).toBeLessThanOrEqual(before);
+        const p = exactPolicy(7500);
+        const base: Baseline = { attended: tl.attended, held: tl.held, asOf: null };
+        const before = Number(displayPercent(tl, p, 0));
+        const afterAttend = displayPercent(tally(base, [attendedMark()], p), p, 0);
+        const afterBunk = displayPercent(tally(base, [bunkedMark()], p), p, 0);
+        expect(Number(afterAttend)).toBeGreaterThanOrEqual(before);
+        expect(Number(afterBunk)).toBeLessThanOrEqual(before);
       }),
       RUNS,
     );
@@ -309,7 +313,18 @@ describe('policy-aware term-end forecast properties', () => {
             ),
           ).toBe(false);
         }
-        if (!f!.reachable) expect(f!.maxSkippable).toBe(0);
+        if (!f!.reachable) {
+          expect(f!.maxSkippable).toBe(0);
+        } else {
+          // Feasibility: skipping exactly maxSkippable occurrences stays eligible.
+          expect(f!.maxSkippable).toBeLessThanOrEqual(f!.remaining);
+          expect(
+            isEligible(
+              { attended: attendAll.attended - skippedSum, held: attendAll.held },
+              p,
+            ),
+          ).toBe(true);
+        }
       }),
       { numRuns: 10_000 },
     );
