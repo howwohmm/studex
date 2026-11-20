@@ -129,8 +129,18 @@ mixed units, express in units/periods). Lines:
 "You can miss up to {s_max} of them." If the raw value is negative, the term-end target is
 unreachable → §6.4.
 
+The closed form above holds for the `exact` policy with all units 1. The reference definition —
+mandatory under `half_up_integer` — uses the selected eligibility predicate: the target is
+reachable if and only if attending every remaining class is eligible, and `maxSkippable` is the
+largest number of occurrences (smallest units first) that can be skipped while staying eligible.
+
 ### 6.4 Honest impossibility (copy approved in psych.md)
-"{T}% isn't reachable this sem. Max possible: {floor(100·(A + R) / (H + R))}%. Each class raises it."
+"{T}% isn't reachable this sem. Max possible: {max}%. Each class raises it." — `{max}` is the attend-all percentage under the policy's display rule (below).
+
+The max-possible value follows the policy's display rule (§5): floored under `exact`, the
+college-rounded integer under `half_up_integer`, so it never contradicts the eligibility verdict.
+The `T = 10,000` impossibility shortcut applies to the `exact` policy only (a college that rounds
+can reach a rounded 100%).
 
 ### 6.5 Not started (H = 0)
 "No classes yet." If R is known, forecast panel: "You can miss up to {floor((10,000 − T)·R /
@@ -237,7 +247,7 @@ that encode D1–D6.
 
 ```ts
 export type BasisPoints = number;            // integer 0..10_000
-export type Units = number;                  // positive safe integer
+export type Units = number;                  // positive integer ≤ 1,000,000 (the cap keeps every search finite)
 export type MarkStatus = 'attended' | 'bunked' | 'cancelled' | 'excused';
 export type ExcusedKind = 'on_duty' | 'medical' | 'other';
 export type ExcusedMapping = 'present' | 'excluded' | 'absent';
@@ -276,16 +286,17 @@ export function recovery(t: Tally, h: Horizon, policy: AttendancePolicy): Recove
 export interface TermEndForecast {
   remaining: number; remainingUnits: number;
   maxSkippable: number; minToAttend: number;     // counts of occurrences; with mixed units, skip smallest units first
-  reachable: boolean; maxReachableDisplay: string; // floor(100·(A+R_u)/(H+R_u))
+  reachable: boolean; maxReachableDisplay: string; // attend-all % under the policy's display rule (§5, §6.4)
 }
-export function termEndForecast(t: Tally, h: Horizon, policy: AttendancePolicy): TermEndForecast | null; // null when term end unknown
+export function termEndForecast(t: Tally, h: Horizon, policy: AttendancePolicy): TermEndForecast | null; // null when term end unknown, or nothing held and nothing left
 export function copyBand(t: Tally, k: number | null, policy: AttendancePolicy): 'above' | 'close' | 'below' | 'not_started';
 export function colorBand(t: Tally, k: number | null, policy: AttendancePolicy): 'good' | 'close' | 'below' | 'not_started';
 export function simulate(t: Tally, sequence: readonly { units: Units; status: MarkStatus; excusedKind?: ExcusedKind }[], policy: AttendancePolicy): Tally[];
 export const CLOSE_MARGIN_BP = 600;
 ```
 
-Invalid input (negative or non-integer numbers, unsafe integers, attended > held, threshold outside
+Invalid input (negative or non-integer numbers, unsafe integers, values above 1,000,000 (attended, held, any unit value, or the sum of
+upcoming units), attended > held, threshold outside
 0–10,000) throws `RangeError` with a message starting `attendance:`. Under `half_up_integer`,
 `displayPercent` returns the college-rounded integer `P` regardless of `decimals`. The color band's
 "6 points above" test is the integer comparison `10,000·A ≥ (T + 600)·H`.
