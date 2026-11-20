@@ -206,6 +206,8 @@ input[type=checkbox] { width: 16px; height: 16px; margin: 0; accent-color: var(-
 .inline-search:focus-within { outline: 2px solid #8d7bf4; outline-offset: 1px; }
 .inline-search input { border: 0; background: transparent; padding: 8px; outline: none; min-width: 0; width: 100%; font-size: 13px; }
 .filter-bar { border-bottom: 1px solid var(--line); }
+.filter-bar .actions { min-width: 0; max-width: 100%; }
+.filter-bar .actions > select { min-width: 0; text-overflow: ellipsis; }
 .filter-bar .actions > svg { color: #6d718b; }
 select { min-height: 34px; padding: 6px 25px 6px 9px; border: 1px solid #dedfec; border-radius: 8px; background: #fff; font-size: 13px; max-width: 100%; }
 .subject-card { text-align: left; display: flex; width: 100%; gap: 11px; align-items: center; padding: 15px; }
@@ -244,7 +246,11 @@ select { min-height: 34px; padding: 6px 25px 6px 9px; border: 1px solid #dedfec;
 .file-picker input::file-selector-button { color: #4833ba; border: 1px solid #ded7fa; border-radius: 6px; padding: 4px 7px; background: white; cursor: pointer; margin-right: 6px; }
 .file-preview { white-space: pre-wrap; overflow-wrap: anywhere; padding: 10px; background: #f7f7fb; border: 1px solid var(--line); border-radius: 9px; color: #464963; font-size: 12px; line-height: 1.5; max-height: 210px; overflow: auto; }
 .file-hint, .import-example { margin-top: 5px; }
-.import-review-list { max-height: min(39dvh, 350px); overflow-y: auto; overscroll-behavior: contain; }
+.dialog:has(.import-review) { overflow: clip; }
+.dialog:has(.import-review) > .dialog-inner { display: flex; flex-direction: column; max-height: inherit; }
+.dialog-inner > form:has(.import-review), .import-review { display: flex; flex-direction: column; min-height: 0; }
+.dialog:has(.import-review) :is(.dialog-title, .dialog-actions, .form-error, .import-review > p, .import-review > .warning) { flex-shrink: 0; }
+.import-review-list { min-height: 0; max-height: min(39dvh, 350px); overflow-y: auto; overscroll-behavior: contain; }
 .import-row { display: grid; grid-template-columns: auto minmax(0, 1fr); border: 1px solid var(--line); border-radius: 9px; margin: 8px 0; padding: 0; min-width: 0; }
 .import-include { display: grid; place-items: center; width: 44px; height: 44px; }
 .import-row summary { min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; padding: 5px 9px 5px 0; font-size: 13px; overflow-wrap: anywhere; }
@@ -329,6 +335,8 @@ select { min-height: 34px; padding: 6px 25px 6px 9px; border: 1px solid #dedfec;
   .week-days { gap: 4px; }
   .history-item > .badge { max-width: 82px; white-space: normal; overflow-wrap: anywhere; text-align: center; }
   .library-item.history-item > span:nth-child(2) strong { white-space: normal; overflow-wrap: anywhere; }
+  .filter-bar .actions { width: 100%; }
+  .filter-bar .actions > :is(.inline-search, select) { flex: 1 1 10rem; }
   .attendance-history .panel-head { flex-wrap: wrap; }
   .exam-strip { display: grid; grid-template-columns: auto minmax(0, 1fr); }
   .exam-strip .button { grid-column: 2; margin: 0; justify-self: start; }

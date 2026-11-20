@@ -214,16 +214,30 @@ test('review CSV changes before linking imported classes to the subject workspac
   await expect(page.getByRole('heading', { name: 'Computer Graphics', exact: true })).toBeVisible();
 });
 
-test('a long timetable review leaves the import action visible on a phone', async ({ page }) => {
+test('a long phone timetable review scrolls only the class list', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 640 });
   await page.goto('/#/timetable');
   await page.getByRole('button', { name: 'Import', exact: true }).click();
   const text = Array.from({ length: 24 }, (_, i) => `Monday,06:00,07:00,Course ${i + 1}`).join('\n');
   await dialog(page).getByLabel('Timetable text').fill('day,start,end,subject\n' + text);
   await dialog(page).getByRole('button', { name: 'Review classes' }).click();
-  await expect(dialog(page).getByRole('group', { name: 'Class 24', exact: true })).toBeAttached();
+  const list = dialog(page).getByRole('region', { name: 'Classes to review' });
+  const lastClass = list.getByRole('group', { name: 'Class 24', exact: true });
+  const importClasses = dialog(page).getByRole('button', { name: 'Import classes' });
+  await expect(lastClass).toBeAttached();
+  await preview(page).hover();
+  await page.mouse.wheel(0, 900);
+  expect(await dialog(page).evaluate((sheet) => {
+    sheet.scrollTop = sheet.scrollHeight;
+    return sheet.scrollTop;
+  })).toBe(0);
+  await expect(preview(page)).toBeInViewport({ ratio: 1 });
   await expect(dialog(page).getByRole('checkbox', { name: /Import even though/ })).toBeInViewport();
-  await expect(dialog(page).getByRole('button', { name: 'Import classes' })).toBeInViewport({ ratio: 1 });
+  await expect(importClasses).toBeInViewport({ ratio: 1 });
+  await list.hover();
+  await page.mouse.wheel(0, 1800);
+  await expect(lastClass).toBeInViewport();
+  await expect(importClasses).toBeInViewport({ ratio: 1 });
 });
 
 function textPdf(line) {
@@ -425,6 +439,38 @@ test('an unknown route has the right breadcrumb and long subject names wrap on p
   const subject = page.getByRole('button', { name: new RegExp(title) }).getByText(title, { exact: true });
   await expect(subject).toHaveCSS('white-space', 'normal');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360);
+});
+
+test('phone dock labels and long subject filters stay within their columns', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.goto('/#/subjects');
+  await page.getByRole('button', { name: 'Add subject', exact: true }).click();
+  const title = 'Advanced Information Systems Engineering and Distributed Computing';
+  await dialog(page).getByLabel('Subject name').fill(title);
+  await dialog(page).getByRole('button', { name: 'Save', exact: true }).click();
+  const dock = page.getByRole('navigation', { name: 'Quick navigation' });
+  for (const [link, filterLabel] of [['Library', 'Filter materials by subject'], ['Tasks', 'Filter assignments by subject']]) {
+    await dock.getByRole('link', { name: link, exact: true }).click();
+    const filter = page.getByLabel(filterLabel);
+    await filter.selectOption({ label: title });
+    await expect(filter).toBeInViewport({ ratio: 1 });
+    expect(await filter.evaluate((select) => {
+      const main = select.closest('main');
+      return main.scrollWidth - main.clientWidth;
+    })).toBe(0);
+  }
+  await dock.getByRole('link', { name: 'Attendance', exact: true }).click();
+  await page.evaluate(() => document.fonts.ready);
+  for (const width of [360, 390, 430]) {
+    await page.setViewportSize({ width, height: 640 });
+    expect(await dock.locator('a').evaluateAll((links) => links.filter((link) => {
+      const range = document.createRange();
+      range.selectNodeContents(link.querySelector('span'));
+      const text = range.getBoundingClientRect();
+      const tab = link.getBoundingClientRect();
+      return text.left < tab.left || text.right > tab.right;
+    }).map((link) => link.textContent))).toEqual([]);
+  }
 });
 
 test('workspace changes in another tab keep the open draft and restore keyboard focus', async ({ page, context }) => {

@@ -28,11 +28,11 @@ const scrollToTop = () => {
   document.querySelector('.workspace-main')?.scrollTo(0, 0);
 };
 
-function NavLink({ path, label, icon: Icon, route, go }) {
+function NavLink({ path, label, shortLabel, icon: Icon, route, go }) {
   const active = pageFor(route) === path;
-  return <a href={'#/' + path} className={'nav-link' + (active ? ' active' : '')} aria-current={active ? 'page' : undefined}
+  return <a href={'#/' + path} className={'nav-link' + (active ? ' active' : '')} aria-label={shortLabel ? label : undefined} aria-current={active ? 'page' : undefined}
     onClick={(event) => { if (!event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) { event.preventDefault(); go(path); } }}>
-    <Icon size={19}/><span>{label}</span>{active && <i/>}
+    <Icon size={19}/><span>{shortLabel || label}</span>{active && <i/>}
   </a>;
 }
 
@@ -195,7 +195,8 @@ function App() {
     <div className="mobile-dock">
       {notice}
       <nav className="bottom-nav" aria-label="Quick navigation">
-        {mobileNav.map(([path, label, Icon]) => <NavLink key={path} path={path} label={path === 'assignments' ? 'Tasks' : label} icon={Icon} route={route} go={go}/>)}
+        {mobileNav.map(([path, label, Icon]) => <NavLink key={path} path={path} label={path === 'assignments' ? 'Tasks' : label}
+          shortLabel={path === 'attendance' ? 'Attend' : undefined} icon={Icon} route={route} go={go}/>)}
         <button className="mobile-add" aria-label="Quick actions" onClick={() => setAction({ type: 'quick' })}><Plus size={20}/><span>Add</span></button>
       </nav>
     </div>
