@@ -10,7 +10,8 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "node --test"
+    "test": "node --test src/*.test.js",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.2.8",
@@ -20,7 +21,9 @@
     "pdfjs-dist": "~5.7.284",
     "react": "^19.2.9",
     "react-dom": "^19.2.9",
-    "tesseract.js": "~6.0.1"
+    "tesseract.js": "~6.0.1",
+    "tesseract.js-core": "~6.1.2",
+    "wasm-feature-detect": "~1.10.1"
   },
   "devDependencies": {
     "@playwright/test": "~1.55.1",

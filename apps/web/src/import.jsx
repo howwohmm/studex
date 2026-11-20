@@ -30,10 +30,14 @@ export function ImportTimetable({ state, apply, close }) {
       } else if (ext === 'txt' || ext === 'csv') {
         if (file.size > 100_000) throw new Error('Text and CSV imports are limited to 100 KB.');
         result = await file.text();
+      } else if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+        await verifyFile(file);
+        const { photoText } = await import('./ocr.js');
+        result = await photoText(file);
       } else {
-        throw new Error('Choose a PDF, CSV or TXT timetable.');
+        throw new Error('Choose a photo, PDF, CSV or TXT timetable.');
       }
-      if (!result.trim()) throw new Error('No selectable text was found. For scanned PDFs, paste a transcription or use a CSV export.');
+      if (!result.trim()) throw new Error('No text was found. Try a clearer photo, paste a transcription, or use a CSV export.');
       if (result.length > 100_000) throw new Error('The timetable text is too long. Try a smaller export.');
       setText(result); setFilename(file.name);
     } catch (err) { setError(err?.message || 'This file could not be read.'); }
@@ -75,7 +79,7 @@ export function ImportTimetable({ state, apply, close }) {
 
   return <Dialog title={review ? 'Review imported classes' : 'Import timetable'} subtitle={review
     ? 'Check times and subject names before adding recurring weekly classes.'
-    : 'Use a text-based PDF, CSV, TXT, or paste one class per line.'} close={close} busy={busy}>
+    : 'Choose a clear English timetable photo, a text-based PDF, CSV or TXT. You can also paste one class per line.'} close={close} busy={busy}>
     <form onSubmit={submit}>
       {review ? <div className="import-review">
         <p className="muted small">{rows.length} selected. Unrecognised lines are skipped. New subject names create new subjects.</p>
@@ -93,7 +97,7 @@ export function ImportTimetable({ state, apply, close }) {
         {conflict && <label className="warning"><CircleAlert size={16}/><input type="checkbox" checked={ackConflict} onChange={(e) => setAckConflict(e.target.checked)}/>Import even though some times overlap</label>}
       </div> : <>
         <label className="file-picker"><FileText size={22}/><span>{busy ? 'Reading timetable…' : filename || 'Choose a timetable file'}</span>
-          <input type="file" accept=".pdf,.csv,.txt" disabled={busy} onChange={(e) => { void read(e.target.files[0]); e.target.value = ''; }}/></label>
+          <input type="file" accept=".pdf,.csv,.txt,.jpg,.jpeg,.png,.webp" disabled={busy} onChange={(e) => { void read(e.target.files[0]); e.target.value = ''; }}/></label>
         <Field label="Timetable text"><textarea rows="7" maxLength="100000" value={text} disabled={busy} onChange={(e) => setText(e.target.value)} placeholder="Monday 09:00–10:00 | Data Structures | Room 302"/></Field>
         <button className="text-link import-example" type="button" disabled={busy} onClick={() => { setText(sample); setFilename(''); setError(''); }}>Use example text</button>
       </>}

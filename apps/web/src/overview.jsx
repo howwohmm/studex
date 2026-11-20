@@ -43,7 +43,7 @@ export default function Overview({ state, today, go, open, toggleTask }) {
   const totals = attended.reduce((sum, row) => ({ present: sum.present + row.present, held: sum.held + row.held }), { present: 0, held: 0 });
   const date = niceDate(today, { weekday: 'long', day: 'numeric', month: 'long' });
   const name = state.profile.name.trim().split(/\s+/)[0];
-  const due = assignments.filter((item) => item.due && item.due <= shiftDate(today, 7)).length;
+  const due = assignments.filter((item) => item.due >= today && item.due <= shiftDate(today, 7)).length;
   const nextExams = tasks.filter((item) => item.type === 'Exam' && item.due >= today);
 
   return <div className="overview">
@@ -63,7 +63,7 @@ export default function Overview({ state, today, go, open, toggleTask }) {
     </div>
     <div className="overview-grid">
       <section className="panel">
-        <PanelHead title="Today’s timetable" subtitle="Your classes at a glance"><TextLink onClick={() => go('timetable')}>Full week</TextLink></PanelHead>
+        <PanelHead title="Today’s timetable" subtitle="Your classes at a glance"><TextLink onClick={() => go('timetable/week')}>Full week</TextLink></PanelHead>
         {events.length ? <div className="event-list">{events.map((item) => <EventRow key={item.id} item={item} subject={subjectFor(item.subjectId)}
           record={state.records.find((record) => record.eventId === item.id && record.date === today)}
           onClick={() => open({ type: 'class', item, date: today })}/>)}</div>

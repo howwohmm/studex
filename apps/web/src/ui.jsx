@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { cloneElement, useEffect, useId, useRef } from 'react';
 import { ArrowRight, BookOpen, CalendarDays, ChevronRight, Clock3, MapPin, X } from 'lucide-react';
 import { niceDate, shiftDate, timeLabel } from './model.js';
 
@@ -29,7 +29,11 @@ export function PanelHead({ title, subtitle, children }) {
 }
 export function Dialog({ title, subtitle, close, busy, children }) {
   const ref = useRef(null);
-  useEffect(() => { ref.current.showModal(); }, []);
+  useEffect(() => {
+    const dialog = ref.current;
+    dialog.showModal();
+    return () => dialog.close();
+  }, []);
   return <dialog ref={ref} className="dialog" aria-labelledby="dialog-title"
     onCancel={(event) => { event.preventDefault(); if (!busy) close(); }}
     onClick={(event) => { if (event.target === ref.current && !busy) close(); }}>
@@ -40,7 +44,11 @@ export function Dialog({ title, subtitle, close, busy, children }) {
   </dialog>;
 }
 export function Field({ label, children, hint, wide }) {
-  return <label className={'field' + (wide ? ' wide' : '')}><span>{label}</span>{children}{hint && <small>{hint}</small>}</label>;
+  const id = useId();
+  return <div className={'field' + (wide ? ' wide' : '')}><label htmlFor={id}>{label}</label>
+    {cloneElement(children, { id, 'aria-describedby': hint ? id + '-hint' : undefined })}
+    {hint && <small id={id + '-hint'}>{hint}</small>}
+  </div>;
 }
 export function SubjectOptions({ subjects, optional }) {
   return <><option value="">{optional ? 'No subject' : 'Select a subject'}</option>
@@ -64,7 +72,7 @@ export function TaskRow({ task, subject, today, onOpen, onToggle }) {
   const done = task.status === 'Completed';
   const cancelled = task.status === 'Cancelled';
   return <div className={'task-row' + (done ? ' is-done' : '')}>
-    <label className="task-check"><input type="checkbox" aria-label={'Complete ' + task.title} checked={done} disabled={cancelled} onChange={onToggle}/></label>
+    <label className="task-check"><input type="checkbox" aria-label={(done ? 'Reopen ' : 'Complete ') + task.title} checked={done} disabled={cancelled} onChange={onToggle}/></label>
     <button className="task-title" onClick={onOpen}><strong>{task.title}</strong><small>{subject?.title ?? task.type} <span>·</span> <span className={!done && !cancelled && task.due && task.due < today ? 'overdue' : ''}>{dueLabel(task.due, today)}</span></small></button>
     <Badge color={task.priority === 'High' ? 'rose' : task.priority === 'Medium' ? 'amber' : 'neutral'}>{task.priority}</Badge>
   </div>;

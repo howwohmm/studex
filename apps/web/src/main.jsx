@@ -19,9 +19,10 @@ const nav = [
   ['assignments', 'Assignments', ClipboardList], ['library', 'Library', FolderClosed],
 ];
 const readRoute = () => window.location.hash.slice(1).replace(/^\//, '') || 'overview';
+const pageFor = (route) => route === 'timetable/week' ? 'timetable' : route.startsWith('subject/') ? 'subjects' : route;
 
 function NavLink({ path, label, icon: Icon, route, go }) {
-  const active = route === path || (path === 'subjects' && route.startsWith('subject/'));
+  const active = pageFor(route) === path;
   return <a href={'#/' + path} className={'nav-link' + (active ? ' active' : '')} aria-current={active ? 'page' : undefined}
     onClick={(event) => { if (!event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) { event.preventDefault(); go(path); } }}>
     <Icon size={19}/><span>{label}</span>{active && <i/>}
@@ -36,7 +37,8 @@ function App() {
   const [note, setNote] = useState(null);
   const [sidebar, setSidebar] = useState(false);
   const subject = route.startsWith('subject/') ? state.subjects.find((s) => s.id === route.split('/')[1]) : null;
-  const page = nav.find(([id]) => id === route)?.[1] || (route === 'settings' ? 'Settings' : route !== 'overview' ? 'Subjects' : 'Overview');
+  const currentPage = pageFor(route);
+  const page = nav.find(([id]) => id === currentPage)?.[1] || (currentPage === 'settings' ? 'Settings' : 'Subjects');
   const initials = state.profile.name.trim().split(/\s+/).slice(0, 2).map((v) => v.charAt(0)).join('').toUpperCase() || 'S';
 
   useEffect(() => {
@@ -126,13 +128,13 @@ function App() {
       </header>
       <main id="main-content" tabIndex={-1} className="page-content">
         {route === 'overview' && <Overview {...props}/>}
-        {route === 'timetable' && <Timetable {...props}/>}
+        {currentPage === 'timetable' && <Timetable key={route} {...props} initialView={route === 'timetable/week' ? 'Week' : 'Day'}/>}
         {route === 'attendance' && <Attendance {...props}/>}
         {route === 'assignments' && <Assignments {...props}/>}
         {route === 'library' && <Library {...props}/>}
         {route === 'settings' && <Settings {...props}/>}
         {route.startsWith('subject/') && <SubjectPage key={route} {...props} subject={subject}/>}
-        {!['overview', 'timetable', 'attendance', 'assignments', 'library', 'settings'].includes(route) && !route.startsWith('subject/') && <Subjects {...props}/>}
+        {!['overview', 'timetable', 'attendance', 'assignments', 'library', 'settings'].includes(currentPage) && !route.startsWith('subject/') && <Subjects {...props}/>}
       </main>
     </div>
     <nav className="bottom-nav" aria-label="Quick navigation">

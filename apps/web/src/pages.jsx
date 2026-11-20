@@ -4,14 +4,14 @@ import {
   ClipboardList, FileText, Filter, FolderOpen, History, LayoutList, ListChecks, Plus, Search, Settings2, Upload,
 } from 'lucide-react';
 import { activeTask, niceDate, orderedTasks, scheduleFor, shiftDate, subjectAttendance, weekStart } from './model.js';
-import { Badge, Button, DayLabel, Empty, EventRow, Field, IconButton, PageTitle, PanelHead, SubjectOptions, TaskRow, TextLink, Tile } from './ui.jsx';
+import { Badge, Button, DayLabel, Empty, EventRow, IconButton, PageTitle, PanelHead, TaskRow, TextLink, Tile } from './ui.jsx';
 
 const riskColor = (status) => ({ 'At risk': 'rose', 'Close to limit': 'amber', 'On track': 'mint' }[status] || 'neutral');
 const matches = (needle, ...values) => values.some((v) => String(v ?? '').toLowerCase().includes(needle.trim().toLowerCase()));
 
-export function Timetable({ state, today, open }) {
+export function Timetable({ state, today, open, initialView = 'Day' }) {
   const [selected, select] = useState(today);
-  const [view, setView] = useState('Day');
+  const [view, setView] = useState(initialView);
   const week = Array.from({ length: 7 }, (_, i) => shiftDate(weekStart(selected), i));
   const dates = view === 'Day' ? [selected] : week;
   return <>
