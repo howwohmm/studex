@@ -9,7 +9,7 @@ select plan(16);
 
 -- A second user who owns nothing.
 insert into auth.users (id, email, aud, role, encrypted_password, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data)
-values ('00000000-0000-4000-8000-0000000000b2', 'other@studex.local', 'authenticated', 'authenticated', '', now(), now(), now(), '{}', '{}')
+values ('019b0000-0000-7000-8000-0000000000b2', 'other@studex.local', 'authenticated', 'authenticated', '', now(), now(), now(), '{}', '{}')
 on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------------
@@ -40,26 +40,26 @@ select is_empty(
 -- ---------------------------------------------------------------------------
 select lives_ok(
   $$insert into public.attendance_marks (id, user_id, term_id, subject_id, occurrence_key, local_date, status, excused_kind)
-    values (gen_random_uuid(), '00000000-0000-4000-8000-0000000000a1',
-            '20000000-0000-4000-8000-000000000001', '30000000-0000-4000-8000-000000000001',
+    values (gen_random_uuid(), '019b0000-0000-7000-8000-0000000000a1',
+            '219b0000-0000-7000-8000-000000000001', '319b0000-0000-7000-8000-000000000001',
             'occ-ex-1', date '2026-11-21', 'excused', 'on_duty')$$,
   'excused + on_duty accepted');
 select lives_ok(
   $$insert into public.attendance_marks (id, user_id, term_id, subject_id, occurrence_key, local_date, status, excused_kind)
-    values (gen_random_uuid(), '00000000-0000-4000-8000-0000000000a1',
-            '20000000-0000-4000-8000-000000000001', '30000000-0000-4000-8000-000000000001',
+    values (gen_random_uuid(), '019b0000-0000-7000-8000-0000000000a1',
+            '219b0000-0000-7000-8000-000000000001', '319b0000-0000-7000-8000-000000000001',
             'occ-ex-2', date '2026-11-21', 'excused', 'medical')$$,
   'excused + medical accepted');
 select throws_ok(
   $$insert into public.attendance_marks (id, user_id, term_id, subject_id, occurrence_key, local_date, status, excused_kind)
-    values (gen_random_uuid(), '00000000-0000-4000-8000-0000000000a1',
-            '20000000-0000-4000-8000-000000000001', '30000000-0000-4000-8000-000000000001',
+    values (gen_random_uuid(), '019b0000-0000-7000-8000-0000000000a1',
+            '219b0000-0000-7000-8000-000000000001', '319b0000-0000-7000-8000-000000000001',
             'occ-ex-3', date '2026-11-21', 'excused', 'present')$$,
   '23514', null, 'excused_kind contribution-mode value rejected');
 select throws_ok(
   $$insert into public.attendance_marks (id, user_id, term_id, subject_id, occurrence_key, local_date, status, excused_kind)
-    values (gen_random_uuid(), '00000000-0000-4000-8000-0000000000a1',
-            '20000000-0000-4000-8000-000000000001', '30000000-0000-4000-8000-000000000001',
+    values (gen_random_uuid(), '019b0000-0000-7000-8000-0000000000a1',
+            '219b0000-0000-7000-8000-000000000001', '319b0000-0000-7000-8000-000000000001',
             'occ-ex-4', date '2026-11-21', 'attended', 'other')$$,
   '23514', null, 'non-excused status with excused_kind rejected');
 
@@ -68,43 +68,43 @@ select throws_ok(
 -- row through the WITH CHECK; the FK then fails).
 -- ---------------------------------------------------------------------------
 set local role authenticated;
-set local request.jwt.claims to '{"sub": "00000000-0000-4000-8000-0000000000b2", "role": "authenticated"}';
+set local request.jwt.claims to '{"sub": "019b0000-0000-7000-8000-0000000000b2", "role": "authenticated"}';
 
 select throws_ok(
   $$insert into public.term_holidays (id, user_id, term_id, date)
-    values (gen_random_uuid(), '00000000-0000-4000-8000-0000000000b2',
-            '20000000-0000-4000-8000-000000000001', date '2026-10-02')$$,
+    values (gen_random_uuid(), '019b0000-0000-7000-8000-0000000000b2',
+            '219b0000-0000-7000-8000-000000000001', date '2026-10-02')$$,
   '23503', null, 'term_holidays: cannot point at another user''s term');
 select throws_ok(
   $$insert into public.attendance_marks (id, user_id, term_id, subject_id, occurrence_key, local_date, status)
-    values (gen_random_uuid(), '00000000-0000-4000-8000-0000000000b2',
-            '20000000-0000-4000-8000-000000000001', '30000000-0000-4000-8000-000000000001',
+    values (gen_random_uuid(), '019b0000-0000-7000-8000-0000000000b2',
+            '219b0000-0000-7000-8000-000000000001', '319b0000-0000-7000-8000-000000000001',
             'occ-b', date '2026-11-21', 'attended')$$,
   '23503', null, 'attendance_marks: cannot point at another user''s term');
 select throws_ok(
   $$insert into public.topics (id, user_id, subject_id)
-    values (gen_random_uuid(), '00000000-0000-4000-8000-0000000000b2',
-            '30000000-0000-4000-8000-000000000001')$$,
+    values (gen_random_uuid(), '019b0000-0000-7000-8000-0000000000b2',
+            '319b0000-0000-7000-8000-000000000001')$$,
   '23503', null, 'topics: cannot point at another user''s subject');
 select throws_ok(
   $$insert into public.annotations (id, user_id, document_id, page_no, kind)
-    values (gen_random_uuid(), '00000000-0000-4000-8000-0000000000b2',
+    values (gen_random_uuid(), '019b0000-0000-7000-8000-0000000000b2',
             gen_random_uuid(), 1, 'highlight')$$,
   null, null, 'annotations: cross-user/missing document rejected');
 
 -- links: source owned by A must be rejected under B's user_id
 reset role;
 insert into public.notes (id, user_id, title)
-values ('50000000-0000-4000-8000-000000000009', '00000000-0000-4000-8000-0000000000a1', 'link src');
+values ('519b0000-0000-7000-8000-000000000009', '019b0000-0000-7000-8000-0000000000a1', 'link src');
 insert into public.notes (id, user_id, title)
-values ('50000000-0000-4000-8000-0000000000b2', '00000000-0000-4000-8000-0000000000b2', 'B note');
+values ('519b0000-0000-7000-8000-0000000000b2', '019b0000-0000-7000-8000-0000000000b2', 'B note');
 set local role authenticated;
-set local request.jwt.claims to '{"sub": "00000000-0000-4000-8000-0000000000b2", "role": "authenticated"}';
+set local request.jwt.claims to '{"sub": "019b0000-0000-7000-8000-0000000000b2", "role": "authenticated"}';
 select throws_ok(
   $$insert into public.links (id, user_id, source_type, source_id, target_type, target_id)
-    values (gen_random_uuid(), '00000000-0000-4000-8000-0000000000b2',
-            'notes', '50000000-0000-4000-8000-000000000009',
-            'notes', '50000000-0000-4000-8000-0000000000b2')$$,
+    values (gen_random_uuid(), '019b0000-0000-7000-8000-0000000000b2',
+            'notes', '519b0000-0000-7000-8000-000000000009',
+            'notes', '519b0000-0000-7000-8000-0000000000b2')$$,
   'P0001', null, 'links: cannot link to another user''s row');
 
 -- ---------------------------------------------------------------------------
@@ -112,49 +112,49 @@ select throws_ok(
 -- ---------------------------------------------------------------------------
 reset role;
 insert into auth.users (id, email, aud, role, encrypted_password, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data)
-values ('00000000-0000-4000-8000-0000000000c3', 'gone@studex.local', 'authenticated', 'authenticated', '', now(), now(), now(), '{}', '{}');
+values ('019b0000-0000-7000-8000-0000000000c3', 'gone@studex.local', 'authenticated', 'authenticated', '', now(), now(), now(), '{}', '{}');
 insert into public.terms (id, user_id, label, start_date, end_date, schedule_mode)
-values ('20000000-0000-4000-8000-00000000000c', '00000000-0000-4000-8000-0000000000c3', 'S', date '2026-08-01', date '2026-12-01', 'weekly');
+values ('219b0000-0000-7000-8000-00000000000c', '019b0000-0000-7000-8000-0000000000c3', 'S', date '2026-08-01', date '2026-12-01', 'weekly');
 insert into public.subjects (id, user_id, term_id, name)
-values ('30000000-0000-4000-8000-00000000000c', '00000000-0000-4000-8000-0000000000c3', '20000000-0000-4000-8000-00000000000c', 'X');
+values ('319b0000-0000-7000-8000-00000000000c', '019b0000-0000-7000-8000-0000000000c3', '219b0000-0000-7000-8000-00000000000c', 'X');
 insert into public.attendance_marks (id, user_id, term_id, subject_id, occurrence_key, local_date, status)
-values ('60000000-0000-4000-8000-00000000000c', '00000000-0000-4000-8000-0000000000c3',
-        '20000000-0000-4000-8000-00000000000c', '30000000-0000-4000-8000-00000000000c',
+values ('619b0000-0000-7000-8000-00000000000c', '019b0000-0000-7000-8000-0000000000c3',
+        '219b0000-0000-7000-8000-00000000000c', '319b0000-0000-7000-8000-00000000000c',
         'occ-c', date '2026-11-21', 'attended');
 
-delete from auth.users where id = '00000000-0000-4000-8000-0000000000c3';
+delete from auth.users where id = '019b0000-0000-7000-8000-0000000000c3';
 select is_empty(
-  $$select 1 from public.attendance_marks where user_id = '00000000-0000-4000-8000-0000000000c3'$$,
+  $$select 1 from public.attendance_marks where user_id = '019b0000-0000-7000-8000-0000000000c3'$$,
   'account deletion removes attendance marks');
 select is_empty(
-  $$select 1 from public.attendance_events where user_id = '00000000-0000-4000-8000-0000000000c3'$$,
+  $$select 1 from public.attendance_events where user_id = '019b0000-0000-7000-8000-0000000000c3'$$,
   'account deletion removes attendance events');
 
 -- ---------------------------------------------------------------------------
 -- support_messages: owner inserts only author_role 'user', no update/delete
 -- ---------------------------------------------------------------------------
 insert into public.support_tickets (id, user_id, body)
-values ('70000000-0000-4000-8000-00000000000a', '00000000-0000-4000-8000-0000000000a1', 'help');
+values ('719b0000-0000-7000-8000-00000000000a', '019b0000-0000-7000-8000-0000000000a1', 'help');
 set local role authenticated;
-set local request.jwt.claims to '{"sub": "00000000-0000-4000-8000-0000000000a1", "role": "authenticated"}';
+set local request.jwt.claims to '{"sub": "019b0000-0000-7000-8000-0000000000a1", "role": "authenticated"}';
 
 select lives_ok(
   $$insert into public.support_messages (ticket_id, author_role, body)
-    values ('70000000-0000-4000-8000-00000000000a', 'user', 'my question')$$,
+    values ('719b0000-0000-7000-8000-00000000000a', 'user', 'my question')$$,
   'support_messages: owner inserts a user message');
 select throws_ok(
   $$insert into public.support_messages (ticket_id, author_role, body)
-    values ('70000000-0000-4000-8000-00000000000a', 'support', 'fake reply')$$,
+    values ('719b0000-0000-7000-8000-00000000000a', 'support', 'fake reply')$$,
   '42501', null, 'support_messages: owner cannot forge a support message');
 update public.support_messages set body = 'tampered'
-where ticket_id = '70000000-0000-4000-8000-00000000000a';
+where ticket_id = '719b0000-0000-7000-8000-00000000000a';
 select results_eq(
-  $$select body from public.support_messages where ticket_id = '70000000-0000-4000-8000-00000000000a'$$,
+  $$select body from public.support_messages where ticket_id = '719b0000-0000-7000-8000-00000000000a'$$,
   $$values ('my question'::text)$$,
   'support_messages: owner cannot update');
-delete from public.support_messages where ticket_id = '70000000-0000-4000-8000-00000000000a';
+delete from public.support_messages where ticket_id = '719b0000-0000-7000-8000-00000000000a';
 select results_eq(
-  $$select count(*)::int from public.support_messages where ticket_id = '70000000-0000-4000-8000-00000000000a'$$,
+  $$select count(*)::int from public.support_messages where ticket_id = '719b0000-0000-7000-8000-00000000000a'$$,
   $$values (1)$$,
   'support_messages: owner cannot delete');
 
