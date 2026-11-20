@@ -264,3 +264,51 @@ describe('properties §11.2', () => {
     );
   });
 });
+
+describe('policy-aware term-end forecast properties', () => {
+  const arbUnitsList = fc.array(fc.integer({ min: 1, max: 4 }), { maxLength: 30 });
+  const arbPolicy = fc
+    .tuple(fc.integer({ min: 0, max: 10_000 }), fc.boolean())
+    .map(([t, half]) => (half ? halfUpPolicy(t) : exactPolicy(t)));
+
+  const horizonOf = (units: readonly number[]): Horizon => ({
+    upcoming: units.map((u, i) => ({
+      occurrenceKey: `o${i}`,
+      startsAt: 'x',
+      units: u,
+      subjectId: 's',
+    })),
+    termEndKnown: true,
+  });
+
+  it('P(j) / FR-ATT-006: reachable ⇔ isEligible(attend-all); maxReachableDisplay === displayPercent(attend-all); maxSkippable maximal', () => {
+    fc.assert(
+      fc.property(arbTally, arbUnitsList, arbPolicy, (tl, units, p) => {
+        const f = termEndForecast(tl, horizonOf(units), p);
+        const ru = units.reduce((s, u) => s + u, 0);
+        if (tl.held === 0 && ru === 0) {
+          expect(f).toBeNull();
+          return;
+        }
+        expect(f).not.toBeNull();
+        const attendAll: Tally = { attended: tl.attended + ru, held: tl.held + ru };
+        expect(f!.reachable).toBe(isEligible(attendAll, p));
+        expect(f!.maxReachableDisplay).toBe(displayPercent(attendAll, p, 0));
+        // Maximality: the next-smallest uns kipped occurrence breaks eligibility.
+        const sorted = [...units].sort((a, b) => a - b);
+        const skippedSum = sorted.slice(0, f!.maxSkippable).reduce((s, u) => s + u, 0);
+        if (f!.maxSkippable < sorted.length) {
+          const next = sorted[f!.maxSkippable]!;
+          expect(
+            isEligible(
+              { attended: attendAll.attended - skippedSum - next, held: attendAll.held },
+              p,
+            ),
+          ).toBe(false);
+        }
+        if (!f!.reachable) expect(f!.maxSkippable).toBe(0);
+      }),
+      { numRuns: 10_000 },
+    );
+  });
+});

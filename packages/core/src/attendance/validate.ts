@@ -9,14 +9,22 @@ export function assertInt(value: number, name: string): void {
   if (!Number.isSafeInteger(value)) fail(`${name} must be a safe integer, got ${value}`);
 }
 
+export const MAX_INPUT = 1_000_000;
+
 export function assertNonNegative(value: number, name: string): void {
   assertInt(value, name);
   if (value < 0) fail(`${name} must be >= 0, got ${value}`);
 }
 
+export function assertCapped(value: number, name: string): void {
+  assertNonNegative(value, name);
+  if (value > MAX_INPUT) fail(`${name} must be <= ${MAX_INPUT}, got ${value}`);
+}
+
 export function assertUnits(value: Units, name: string): void {
   assertInt(value, name);
   if (value <= 0) fail(`${name} must be a positive integer, got ${value}`);
+  if (value > MAX_INPUT) fail(`${name} must be <= ${MAX_INPUT}, got ${value}`);
 }
 
 export function assertPolicy(policy: AttendancePolicy): void {
@@ -27,8 +35,8 @@ export function assertPolicy(policy: AttendancePolicy): void {
 }
 
 export function assertTally(t: Tally): void {
-  assertNonNegative(t.attended, 'attended');
-  assertNonNegative(t.held, 'held');
+  assertCapped(t.attended, 'attended');
+  assertCapped(t.held, 'held');
   if (t.attended > t.held) {
     fail(`attended (${t.attended}) exceeds held (${t.held})`);
   }
@@ -53,10 +61,8 @@ export function assertLocalDate(value: string, name: string): void {
   if (day < 1 || day > dim) fail(`${name} has invalid day in '${value}'`);
 }
 
-/** True mathematical floor division on bigints, correct for negative numerators. */
+/** True floor division on bigints; denominator must be positive. */
 export function floorDivBig(numerator: bigint, denominator: bigint): bigint {
   const q = numerator / denominator;
-  return numerator % denominator !== 0n && (numerator < 0n) !== (denominator < 0n)
-    ? q - 1n
-    : q;
+  return numerator % denominator !== 0n && numerator < 0n ? q - 1n : q;
 }

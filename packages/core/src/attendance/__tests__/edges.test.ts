@@ -226,3 +226,70 @@ describe('§6.6 bands', () => {
     expect(copyBand(tl, 1, p)).toBe('above');
   });
 });
+
+describe('review fixes — policy-aware forecasts and input cap', () => {
+  it('R1 / FR-ATT-006: half_up 149/200 with one class left → reachable, skips 0, display "75"', () => {
+    // Attend-all gives 150/201 → rounds to 75 → eligible; the exact-only formula
+    // wrongly said sUnits = -1 → unreachable.
+    const f = termEndForecast(t(149, 200), h([1], true), halfUp());
+    expect(f).toMatchObject({
+      remaining: 1,
+      remainingUnits: 1,
+      maxSkippable: 0,
+      minToAttend: 1,
+      reachable: true,
+      maxReachableDisplay: '75',
+    });
+  });
+
+  it('R2 / FR-ATT-008: half_up T=10000 198/199 unknown end → recoverable n=1 (rounded 100%)', () => {
+    // 199/200 = 99.5% → rounds to 100 → eligible under the college rule.
+    expect(recovery(t(198, 199), h([], false), halfUp(10_000))).toEqual({
+      kind: 'recoverable',
+      n: 1,
+    });
+    // The exact shortcut still applies under exact:
+    expect(recovery(t(198, 199), h([], false), exact(10_000))).toEqual({
+      kind: 'unreachable',
+      maxReachableDisplay: null,
+    });
+  });
+
+  it('R3 / FR-ATT-001: held 1,000,001 throws; near-cap half_up recovery finishes fast via bigint search', () => {
+    const p = halfUp(9999);
+    expect(() => isEligible(t(0, 1_000_001), p)).toThrowError(/^attendance:/);
+    expect(() => safeNowBudget(t(5, 5), h([1_000_001], true), p)).toThrowError(/^attendance:/);
+    expect(() => safeNowBudget(t(5, 5), h([999_999, 2], true), p)).toThrowError(/^attendance:/);
+
+    const start = Date.now();
+    const rec = recovery(t(0, 1_000_000), h([], false), p);
+    expect(Date.now() - start).toBeLessThan(1000);
+    // Independent check: smallest k with 100·floor((200k + H)/(2H)) ≥ T.
+    const H = 1_000_000n;
+    let expected = 0n;
+    for (let k = 1n; ; k *= 2n) {
+      if ((200n * k + (H + k)) / (2n * (H + k)) * 100n >= 9999n) {
+        let lo = k / 2n;
+        let hi = k;
+        while (hi - lo > 1n) {
+          const mid = lo + (hi - lo) / 2n;
+          const ok = (200n * mid + (H + mid)) / (2n * (H + mid)) * 100n >= 9999n;
+          if (ok) hi = mid; else lo = mid;
+        }
+        expected = hi;
+        break;
+      }
+    }
+    expect(rec).toEqual({ kind: 'recoverable', n: Number(expected) });
+  });
+});
+
+describe('validate helpers', () => {
+  it('FR-ATT-001: floorDivBig is true mathematical floor for negative numerators', async () => {
+    const { floorDivBig } = await import('../validate.js');
+    expect(floorDivBig(-75_000n, 10_000n)).toBe(-8n); // not -7 (JS truncates toward 0)
+    expect(floorDivBig(75_000n, 10_000n)).toBe(7n);
+    expect(floorDivBig(-80_000n, 10_000n)).toBe(-8n); // exact division stays exact
+    expect(floorDivBig(0n, 10_000n)).toBe(0n);
+  });
+});

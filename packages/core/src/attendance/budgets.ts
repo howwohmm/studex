@@ -1,4 +1,5 @@
 import {
+  assertCapped,
   assertPolicy,
   assertTally,
   assertUnits,
@@ -27,9 +28,18 @@ export interface TermEndForecast {
 }
 
 function assertHorizon(h: Horizon): void {
+  let total = 0;
   for (const occ of h.upcoming) {
     assertUnits(occ.units, 'upcoming.units');
+    total += occ.units;
   }
+  assertCapped(total, 'sum of upcoming units');
+}
+
+/** Integer display of a derived tally under the policy's display rule (§5). */
+function policyPercent(A: bigint, H: bigint, policy: AttendancePolicy): string {
+  if (policy.rounding === 'exact') return String((100n * A) / H);
+  return String((200n * A + H) / (2n * H));
 }
 
 function eligibleBig(A: bigint, H: bigint, policy: AttendancePolicy): boolean {
@@ -52,15 +62,15 @@ function virtualBunkBudget(A: bigint, H: bigint, policy: AttendancePolicy): numb
     return Number(floorDivBig(10_000n * A - T * H, T));
   }
   // half_up_integer: eligibility is non-increasing in H with A fixed.
-  let lo = 0;
-  let hi = 1;
-  while (eligibleBig(A, H + BigInt(hi), policy)) hi *= 2;
-  while (hi - lo > 1) {
-    const mid = lo + Math.floor((hi - lo) / 2);
-    if (eligibleBig(A, H + BigInt(mid), policy)) lo = mid;
+  let lo = 0n;
+  let hi = 1n;
+  while (eligibleBig(A, H + hi, policy)) hi *= 2n;
+  while (hi - lo > 1n) {
+    const mid = lo + (hi - lo) / 2n;
+    if (eligibleBig(A, H + mid, policy)) lo = mid;
     else hi = mid;
   }
-  return lo;
+  return Number(lo);
 }
 
 /**
@@ -74,15 +84,15 @@ function virtualRecoveryCount(A: bigint, H: bigint, policy: AttendancePolicy): n
     return Number(k);
   }
   // half_up_integer: eligibility under attend-all is non-decreasing in k.
-  let lo = 0;
-  let hi = 1;
-  while (!eligibleBig(A + BigInt(hi), H + BigInt(hi), policy)) hi *= 2;
-  while (hi - lo > 1) {
-    const mid = lo + Math.floor((hi - lo) / 2);
-    if (eligibleBig(A + BigInt(mid), H + BigInt(mid), policy)) hi = mid;
+  let lo = 0n;
+  let hi = 1n;
+  while (!eligibleBig(A + hi, H + hi, policy)) hi *= 2n;
+  while (hi - lo > 1n) {
+    const mid = lo + (hi - lo) / 2n;
+    if (eligibleBig(A + mid, H + mid, policy)) hi = mid;
     else lo = mid;
   }
-  return hi;
+  return Number(hi);
 }
 
 export function safeNowBudget(
@@ -131,12 +141,15 @@ export function recovery(
   }
   const ru = h.upcoming.reduce((sum, occ) => sum + occ.units, 0);
   if (h.termEndKnown) {
-    const maxDisplay = String(
-      (100n * (BigInt(t.attended) + BigInt(ru))) / (BigInt(t.held) + BigInt(ru)),
+    const maxDisplay = policyPercent(
+      BigInt(t.attended) + BigInt(ru),
+      BigInt(t.held) + BigInt(ru),
+      policy,
     );
     return { kind: 'unreachable', maxReachableDisplay: maxDisplay };
   }
-  if (policy.thresholdBp === 10_000) {
+  // T = 10_000 is impossible only under exact; a rounded 100% stays reachable (§6.4).
+  if (policy.rounding === 'exact' && policy.thresholdBp === 10_000) {
     return { kind: 'unreachable', maxReachableDisplay: null };
   }
   return { kind: 'recoverable', n: n + virtualRecoveryCount(A, H, policy) };
@@ -157,19 +170,26 @@ export function termEndForecast(
   const H = BigInt(t.held);
   const T = BigInt(policy.thresholdBp);
   if (H === 0n && ru === 0) return null;
-  const sUnits = floorDivBig(10_000n * (A + BigInt(ru)) - T * (H + BigInt(ru)), 10_000n);
-  const reachable = sUnits >= 0n;
+  const attendAllA = A + BigInt(ru);
+  const attendAllH = H + BigInt(ru);
+  const reachable = eligibleBig(attendAllA, attendAllH, policy);
   let maxSkippable = 0;
-  if (reachable) {
+  if (reachable && policy.rounding === 'exact' && h.upcoming.every((o) => o.units === 1)) {
+    // Closed form (u = 1, exact): skippable units s_u clipped to [0, R].
+    const sUnits = floorDivBig(10_000n * attendAllA - T * attendAllH, 10_000n);
+    maxSkippable = Number(sUnits) < R ? Number(sUnits) : R;
+  } else if (reachable) {
+    // Reference definition (mandatory under half_up_integer, §6.3): skip the
+    // smallest units first while attending the rest stays eligible.
     const sorted = h.upcoming.map((occ) => occ.units).sort((a, b) => a - b);
-    let spent = 0;
+    let skipped = 0n;
     for (const u of sorted) {
-      if (BigInt(spent) + BigInt(u) > sUnits) break;
-      spent += u;
+      if (!eligibleBig(attendAllA - skipped - BigInt(u), attendAllH, policy)) break;
+      skipped += BigInt(u);
       maxSkippable += 1;
     }
   }
-  const maxReachableDisplay = String((100n * (A + BigInt(ru))) / (H + BigInt(ru)));
+  const maxReachableDisplay = policyPercent(attendAllA, attendAllH, policy);
   return {
     remaining: R,
     remainingUnits: ru,
