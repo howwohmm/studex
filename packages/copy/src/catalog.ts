@@ -11,8 +11,7 @@ export const catalog = {
   'capture.button.scan': 'Scan timetable',
   'capture.button.photos': 'Choose from Photos',
   'capture.button.pdf': 'Pick a PDF',
-  'capture.caption':
-    'Crumpled paper, PDF, screenshot from the class group — all fine.',
+  'capture.caption': 'Crumpled paper, PDF, screenshot from the class group — all fine.',
   'capture.manual.link': 'No timetable handy? Type it in',
   'permission.camera':
     'StudEx uses the camera to scan your timetable and to add photos to your subject folders. Everything stays on this device.',
@@ -20,12 +19,9 @@ export const catalog = {
   // §5 Today
   'today.title': 'Today',
   'today.card.caption': 'Overall',
-  'today.verdict.above':
-    "You're at {percent}%. You can bunk {n} more and stay above {threshold}%.",
-  'today.verdict.close':
-    "You're at {percent}%. One bunk puts you under {threshold}%.",
-  'today.verdict.below':
-    "You're at {percent}%. Attend the next {n} to reach {threshold}%.",
+  'today.verdict.above': "You're at {percent}%. You can bunk {n} more and stay above {threshold}%.",
+  'today.verdict.close': "You're at {percent}%. One bunk puts you under {threshold}%.",
+  'today.verdict.below': "You're at {percent}%. Attend the next {n} to reach {threshold}%.",
   'today.section.now': 'Now',
   'today.section.upcoming': 'Coming up',
   'today.section.earlier': 'Earlier',

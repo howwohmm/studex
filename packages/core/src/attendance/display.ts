@@ -2,11 +2,7 @@ import { assertPolicy, assertTally } from './validate';
 import { roundedPercentBig } from './eligibility';
 import type { AttendancePolicy, Tally } from './types';
 
-export function displayPercent(
-  t: Tally,
-  policy: AttendancePolicy,
-  decimals: 0 | 1,
-): string | null {
+export function displayPercent(t: Tally, policy: AttendancePolicy, decimals: 0 | 1): string | null {
   assertPolicy(policy);
   assertTally(t);
   if (t.held === 0) return null;

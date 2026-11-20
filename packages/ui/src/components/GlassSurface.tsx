@@ -1,6 +1,6 @@
 import { View, Platform, type ViewStyle } from 'react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
-import { useScheme, useTheme } from '../theme';
+import { useTheme } from '../theme';
 import { radii } from '../tokens';
 import type { ReactNode } from 'react';
 
@@ -24,7 +24,8 @@ export function GlassSurface({
         style={[
           { borderRadius: radius, borderCurve: 'continuous' as never, overflow: 'hidden' },
           style,
-        ]}>
+        ]}
+      >
         {children}
       </GlassView>
     );
@@ -41,7 +42,8 @@ export function GlassSurface({
           overflow: 'hidden',
         },
         style,
-      ]}>
+      ]}
+    >
       {children}
     </View>
   );

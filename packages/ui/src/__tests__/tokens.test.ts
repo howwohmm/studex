@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { colors, hapticEvents, timings, type HapticEvent } from '../tokens';
+import { colors, hapticEvents, timings } from '../tokens';
 
 function parse(color: string): [number, number, number, number] {
   if (color.startsWith('#')) {
@@ -52,7 +52,15 @@ describe('WCAG contrast (tokens)', () => {
     it(`${scheme} gauge tick (label.secondary) on fill.control >= 3:1`, () => {
       // tick sits on the quiet track (fill.control composited over bg.grouped)
       const track = composite(c.fill.control, c.bg.grouped);
-      const trackHex = '#' + track.map((v) => Math.round(v * 255).toString(16).padStart(2, '0')).join('');
+      const trackHex =
+        '#' +
+        track
+          .map((v) =>
+            Math.round(v * 255)
+              .toString(16)
+              .padStart(2, '0'),
+          )
+          .join('');
       expect(ratio(c.label.secondary, trackHex)).toBeGreaterThanOrEqual(3);
     });
   }
@@ -60,7 +68,12 @@ describe('WCAG contrast (tokens)', () => {
 
 describe('haptic events map', () => {
   it('covers every event with a supported kind', () => {
-    const kinds = new Set(['impactLight', 'notificationSuccess', 'notificationWarning', 'selection']);
+    const kinds = new Set([
+      'impactLight',
+      'notificationSuccess',
+      'notificationWarning',
+      'selection',
+    ]);
     for (const [event, kind] of Object.entries(hapticEvents)) {
       expect(kinds.has(kind), `${event} → ${kind}`).toBe(true);
     }

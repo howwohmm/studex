@@ -1,6 +1,6 @@
-import { ScrollView, View } from 'react-native';
+import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme, Text, spacing, useScheme } from '@studex/ui';
+import { useTheme, Text, spacing } from '@studex/ui';
 import type { ReactNode } from 'react';
 
 /** Large-title screen shell: grouped bg, in-screen large title, 20pt margins. */
@@ -16,7 +16,8 @@ export function Screen({ title, children }: { title: string; children: ReactNode
         paddingBottom: insets.bottom + 120,
         gap: spacing[20],
       }}
-      contentInsetAdjustmentBehavior="never">
+      contentInsetAdjustmentBehavior="never"
+    >
       <Text variant="largeTitle" accessibilityRole="header">
         {title}
       </Text>

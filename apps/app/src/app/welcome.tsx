@@ -1,7 +1,11 @@
 import { useEffect } from 'react';
 import { View, Pressable, ScrollView } from 'react-native';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming, useReducedMotion, Easing,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  useReducedMotion,
+  Easing,
 } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -43,7 +47,8 @@ export default function WelcomeScreen() {
         paddingTop: insets.top + spacing[56] + spacing[40],
         paddingHorizontal: spacing[24],
         paddingBottom: insets.bottom + spacing[24],
-      }}>
+      }}
+    >
       <View style={{ gap: spacing[32] }}>
         <Staggered index={0}>
           <View
@@ -55,7 +60,8 @@ export default function WelcomeScreen() {
               backgroundColor: theme.accent,
               alignItems: 'center',
               justifyContent: 'center',
-            }}>
+            }}
+          >
             <Icon name="gauge" size={40} color="#FFFFFF" />
           </View>
         </Staggered>
@@ -75,10 +81,13 @@ export default function WelcomeScreen() {
                     backgroundColor: theme.accentSoft,
                     alignItems: 'center',
                     justifyContent: 'center',
-                  }}>
+                  }}
+                >
                   <Icon name={f.icon} size={30} color="accent" />
                 </View>
-                <Text variant="headline" style={{ flex: 1 }}>{t(f.key)}</Text>
+                <Text variant="headline" style={{ flex: 1 }}>
+                  {t(f.key)}
+                </Text>
               </View>
             </Staggered>
           ))}
@@ -91,8 +100,16 @@ export default function WelcomeScreen() {
           <Pressable
             accessibilityRole="link"
             onPress={() => router.push('/manual-entry')}
-            style={{ paddingVertical: spacing[8], alignItems: 'center', minHeight: 44, justifyContent: 'center' }}>
-            <Text variant="subhead" color="accent">{t('capture.manual.link')}</Text>
+            style={{
+              paddingVertical: spacing[8],
+              alignItems: 'center',
+              minHeight: 44,
+              justifyContent: 'center',
+            }}
+          >
+            <Text variant="subhead" color="accent">
+              {t('capture.manual.link')}
+            </Text>
           </Pressable>
         </View>
       </Staggered>

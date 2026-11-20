@@ -15,7 +15,8 @@ export function Card({ children, style }: { children: ReactNode; style?: ViewSty
           padding: spacing[20],
         },
         style,
-      ]}>
+      ]}
+    >
       {children}
     </View>
   );

@@ -9,11 +9,13 @@ native build died because it was hard to get onto phones, looked ugly, and didn'
 @AGENTS.md
 
 ## Source of truth
+
 `docs/spec/` is the law (`docs/spec/README.md` §2 sets the authority order). Read
 `docs/spec/09-agent-contract.md` before any task. `docs/spec/reference/v1/` holds the shipped iOS
 v1.0 briefs; only the parts the spec adopts govern.
 
 ## ISOLATION MODE — hard rules
+
 1. **No credentials from anywhere else.** Never read shell profiles (~/.zshrc etc.), ~/.config,
    other projects' .env files, or Keychain. The only key sources are `.env.local` files in this
    repo, which **Ohm edits himself** — agents never read or write them.
@@ -26,6 +28,7 @@ v1.0 briefs; only the parts the spec adopts govern.
    `~/projects/studex/studex-hub/studex-vault/` and `~/projects/studex/studex-hub/studex-ios/`.
 
 ## Hard-won lessons (do not relearn these)
+
 - **Checkpoint-commit after every green state.** Session limits killed two agent waves
   mid-flight; committed work survived, in-flight context didn't.
 - **Screenshot-QA every screen, light + dark.** Two of four ship-blocking bugs were invisible to a
@@ -36,6 +39,7 @@ v1.0 briefs; only the parts the spec adopts govern.
   space-containing paths.
 
 ## Build and run (from the repo root)
+
 - `pnpm install`
 - `pnpm dev` (Expo dev server) · `pnpm web` · `pnpm ios` · `pnpm android`
 - `pnpm typecheck` · `pnpm test`

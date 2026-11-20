@@ -1,11 +1,6 @@
 import { assertCapped, assertPolicy, assertTally } from './validate';
 import { markContribution } from './tally';
-import type {
-  AttendancePolicy,
-  ExcusedKind,
-  MarkStatus,
-  Tally,
-} from './types';
+import type { AttendancePolicy, ExcusedKind, MarkStatus, Tally } from './types';
 
 export interface SimulationStep {
   units: number;

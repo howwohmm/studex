@@ -75,8 +75,7 @@ export function assertLocalDate(value: string, name: string): void {
   const month = Number(m[2]);
   const day = Number(m[3]);
   if (month < 1 || month > 12) fail(`${name} has invalid month in '${value}'`);
-  const dim =
-    month === 2 && isLeapYear(year) ? 29 : (DAYS_IN_MONTH[month - 1] as number);
+  const dim = month === 2 && isLeapYear(year) ? 29 : (DAYS_IN_MONTH[month - 1] as number);
   if (day < 1 || day > dim) fail(`${name} has invalid day in '${value}'`);
 }
 

@@ -1,6 +1,11 @@
 import { useEffect } from 'react';
 import { Pressable, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, useReducedMotion } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  useReducedMotion,
+} from 'react-native-reanimated';
 import { useTheme } from '../theme';
 import { radii, springs } from '../tokens';
 import { haptic } from '../haptics';
@@ -33,7 +38,8 @@ export function SegmentedControl({
         borderRadius: radii.sm,
         borderCurve: 'continuous' as never,
         padding: 2,
-      }}>
+      }}
+    >
       <Animated.View
         style={[
           {
@@ -58,7 +64,8 @@ export function SegmentedControl({
             if (i === selected) return;
             haptic('pickerChange');
             onChange(i);
-          }}>
+          }}
+        >
           <Text variant="subhead" color={i === selected ? 'primary' : 'secondary'}>
             {opt}
           </Text>

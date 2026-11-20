@@ -6,14 +6,7 @@ import {
   assertUnits,
   fail,
 } from './validate';
-import type {
-  AttendancePolicy,
-  Baseline,
-  ExcusedKind,
-  ExcusedMapping,
-  Mark,
-  Tally,
-} from './types';
+import type { AttendancePolicy, Baseline, ExcusedKind, ExcusedMapping, Mark, Tally } from './types';
 
 const VALID_STATUSES = new Set(['attended', 'bunked', 'cancelled', 'excused']);
 const VALID_EXCUSED_KINDS = new Set(['on_duty', 'medical', 'other']);
@@ -50,11 +43,7 @@ export function markContribution(mark: Mark, policy: AttendancePolicy): Tally {
   }
 }
 
-export function tally(
-  baseline: Baseline,
-  marks: readonly Mark[],
-  policy: AttendancePolicy,
-): Tally {
+export function tally(baseline: Baseline, marks: readonly Mark[], policy: AttendancePolicy): Tally {
   assertPolicy(policy);
   assertTally(baseline);
   if (baseline.asOf !== null) assertLocalDate(baseline.asOf, 'baseline.asOf');

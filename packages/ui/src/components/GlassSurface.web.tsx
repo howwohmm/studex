@@ -28,7 +28,8 @@ export function GlassSurface({
           WebkitBackdropFilter: 'blur(20px) saturate(180%)',
         },
         style,
-      ]}>
+      ]}
+    >
       {children}
     </View>
   );

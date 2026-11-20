@@ -2,16 +2,41 @@ import { ScrollView, View, useColorScheme } from 'react-native';
 import { useState } from 'react';
 import { useSharedValue } from 'react-native-reanimated';
 import {
-  colors, typeScale, spacing, radii, Text, Button, IconButton, Icon, Card,
-  ListRow, Chip, Badge, SegmentedControl, Gauge, NumberTicker, EmptyState,
-  Skeleton, GlassSurface, ThemeProvider, type TextVariant,
+  colors,
+  typeScale,
+  spacing,
+  radii,
+  Text,
+  Button,
+  IconButton,
+  Icon,
+  Card,
+  ListRow,
+  Chip,
+  Badge,
+  SegmentedControl,
+  Gauge,
+  NumberTicker,
+  EmptyState,
+  Skeleton,
+  GlassSurface,
+  ThemeProvider,
+  type TextVariant,
 } from '@studex/ui';
-import type { IconName } from '@studex/ui';
 
 function Swatch({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      <View style={{ width: 28, height: 28, borderRadius: 6, backgroundColor: value, borderWidth: 1, borderColor: '#8884' }} />
+      <View
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: 6,
+          backgroundColor: value,
+          borderWidth: 1,
+          borderColor: '#8884',
+        }}
+      />
       <Text variant="caption1">{label}</Text>
     </View>
   );
@@ -20,7 +45,9 @@ function Swatch({ label, value }: { label: string; value: string }) {
 function GallerySection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View style={{ gap: 8 }}>
-      <Text variant="caption2" color="secondary" style={{ textTransform: 'uppercase' }}>{title}</Text>
+      <Text variant="caption2" color="secondary" style={{ textTransform: 'uppercase' }}>
+        {title}
+      </Text>
       {children}
     </View>
   );
@@ -44,7 +71,12 @@ function Gallery({ scheme }: { scheme: 'light' | 'dark' }) {
       </GallerySection>
       <GallerySection title="type scale">
         {(Object.keys(typeScale) as TextVariant[]).map((v) => (
-          <Text key={v} variant={v} color={c.label.primary as never} style={{ color: c.label.primary }}>
+          <Text
+            key={v}
+            variant={v}
+            color={c.label.primary as never}
+            style={{ color: c.label.primary }}
+          >
             {v}
           </Text>
         ))}
@@ -52,12 +84,25 @@ function Gallery({ scheme }: { scheme: 'light' | 'dark' }) {
       <GallerySection title="spacing / radii">
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
           {Object.values(spacing).map((s) => (
-            <View key={s} style={{ width: s, height: s, backgroundColor: c.accentSoft, borderRadius: 2 }} />
+            <View
+              key={s}
+              style={{ width: s, height: s, backgroundColor: c.accentSoft, borderRadius: 2 }}
+            />
           ))}
         </View>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {Object.values(radii).map((r) => (
-            <View key={r} style={{ width: 40, height: 40, borderRadius: r, backgroundColor: c.accentSoft, borderWidth: 1, borderColor: c.accent }} />
+            <View
+              key={r}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: r,
+                backgroundColor: c.accentSoft,
+                borderWidth: 1,
+                borderColor: c.accent,
+              }}
+            />
           ))}
         </View>
       </GallerySection>
@@ -70,7 +115,9 @@ function Gallery({ scheme }: { scheme: 'light' | 'dark' }) {
         </IconButton>
       </GallerySection>
       <GallerySection title="components">
-        <Card><Text>Card</Text></Card>
+        <Card>
+          <Text>Card</Text>
+        </Card>
         <ListRow title="List row" subtitle="Subtitle" trailing={<Chip label="78%" />} />
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Chip label="Chip" />
@@ -94,7 +141,9 @@ export default function GalleryScreen() {
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
   return (
     <ScrollView style={{ flex: 1 }}>
-      <Text variant="largeTitle" style={{ padding: 16 }}>Gallery ({scheme})</Text>
+      <Text variant="largeTitle" style={{ padding: 16 }}>
+        Gallery ({scheme})
+      </Text>
       <ThemeProvider scheme={scheme}>
         <Gallery scheme={scheme} />
       </ThemeProvider>

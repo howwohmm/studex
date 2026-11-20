@@ -7,9 +7,7 @@ export default function AppTabs() {
   const theme = colors[scheme];
 
   return (
-    <NativeTabs
-      tintColor={theme.accent}
-      labelStyle={{ selected: { color: theme.accent } }}>
+    <NativeTabs tintColor={theme.accent} labelStyle={{ selected: { color: theme.accent } }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>{t('tabs.today')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="sun.max" md="wb_sunny" />

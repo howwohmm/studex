@@ -1,5 +1,10 @@
-import { Pressable, View, type ViewStyle } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, useReducedMotion } from 'react-native-reanimated';
+import { Pressable, type ViewStyle } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  useReducedMotion,
+} from 'react-native-reanimated';
 import { springs, radii } from '../tokens';
 import { useTheme } from '../theme';
 import { haptic } from '../haptics';
@@ -28,7 +33,11 @@ export function Button({
   const reduce = useReducedMotion();
   const animated = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const bg =
-    variant === 'primary' ? theme.accentSolid : variant === 'tinted' ? theme.accentSoft : 'transparent';
+    variant === 'primary'
+      ? theme.accentSolid
+      : variant === 'tinted'
+        ? theme.accentSoft
+        : 'transparent';
   const fg = variant === 'primary' ? theme.onAccent : theme.accent;
   const style: ViewStyle = {
     minHeight: 50,
@@ -57,7 +66,8 @@ export function Button({
       onPress={() => {
         if (hapticEvent) haptic(hapticEvent);
         onPress();
-      }}>
+      }}
+    >
       {icon}
       <Text variant="headline" color={fg} style={{ color: fg }}>
         {title}
@@ -110,7 +120,8 @@ export function IconButton({
       onPress={() => {
         if (hapticEvent) haptic(hapticEvent);
         onPress();
-      }}>
+      }}
+    >
       {children}
     </AnimatedPressable>
   );

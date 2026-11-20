@@ -42,8 +42,19 @@ function TabBar({
       style={[
         styles.bar,
         sidebar
-          ? { width: 240, borderRightWidth: 1, flexDirection: 'column', paddingTop: spacing[24], gap: spacing[4] }
-          : { borderTopWidth: 1, flexDirection: 'row', paddingBottom: spacing[8], paddingTop: spacing[8] },
+          ? {
+              width: 240,
+              borderRightWidth: 1,
+              flexDirection: 'column',
+              paddingTop: spacing[24],
+              gap: spacing[4],
+            }
+          : {
+              borderTopWidth: 1,
+              flexDirection: 'row',
+              paddingBottom: spacing[8],
+              paddingTop: spacing[8],
+            },
         {
           borderColor: theme.glass.border,
           backgroundColor: theme.glass.fallback,
@@ -51,7 +62,8 @@ function TabBar({
           // @ts-expect-error — vendor-prefixed CSS property not in RN types
           WebkitBackdropFilter: 'blur(20px) saturate(180%)',
         },
-      ]}>
+      ]}
+    >
       {children}
     </View>
   );
@@ -83,9 +95,12 @@ function TabItem({
               backgroundColor: isFocused ? theme.accentSoft : 'transparent',
             }
           : { alignItems: 'center', gap: 2, paddingVertical: 4 },
-      ]}>
+      ]}
+    >
       <Icon name={tab.icon} size={22} color={color} />
-      <Text variant="caption1" style={{ color }}>{t(tab.label)}</Text>
+      <Text variant="caption1" style={{ color }}>
+        {t(tab.label)}
+      </Text>
     </Pressable>
   );
 }
