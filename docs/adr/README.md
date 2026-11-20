@@ -11,7 +11,7 @@ Stubs generated from `docs/spec/06-architecture.md` §2 (P0-02). Template: `docs
 | [ADR-005](ADR-005-local-first-sync.md) | Local-first sync | Proposed — pending S-1 |
 | [ADR-006](ADR-006-styling.md) | Styling | Accepted |
 | [ADR-007](ADR-007-document-worker.md) | Document worker | Accepted |
-| [ADR-008](ADR-008-ai-gateway-packages-ai-server-only-with-.md) | AI gateway (packages/ai, server-only) with a provider regi | Accepted |
+| [ADR-008](ADR-008-ai-gateway.md) | AI gateway | Accepted |
 | [ADR-009](ADR-009-timetable-extraction.md) | Timetable extraction | Proposed — pending S-4 |
 | [ADR-010](ADR-010-search.md) | Search | Accepted |
 | [ADR-011](ADR-011-notifications.md) | Notifications | Accepted |

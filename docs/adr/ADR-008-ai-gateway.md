@@ -1,4 +1,4 @@
-# ADR-008: AI gateway (packages/ai, server-only) with a provider regi
+# ADR-008: AI gateway
 - Status: Accepted
 - Date: 2026-11-20 · Deciders: lead agent, Ohm
 - Spec links: `docs/spec/06-architecture.md` §2 (ADR-008)
