@@ -3432,6 +3432,7 @@ and alerts live · Ohm's approval recorded.
 | Q15 | More real fixtures with permission (other RUAS branches/years, phone photos, syllabi, PYQs) | Needed before the Ph3/Ph4 gates | Ph1–Ph4 |
 | Q16 | Analytics: PostHog EU cloud or self-hosted | PostHog EU cloud | P1-27 |
 | Q17 | Visual direction for the cross-platform design | Lead presents two directions (screenshots) at P0-08 for your pick | P0-08 |
+| Q18 | License for the public repository's code | None (all rights reserved) until you pick one | Before outside contributions |
 
 ## 3. Risk register
 
