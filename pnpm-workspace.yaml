@@ -1,4 +1,8 @@
 packages:
   - apps/*
   - packages/*
+allowBuilds:
+  supabase: true
 minimumReleaseAge: 10080
+overrides:
+  tar: 7.5.22 # GHSA-23hp-3jrh-7fpw + 5 more advisories in tar <7.5.22 (via supabase CLI)
