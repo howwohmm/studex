@@ -6,11 +6,13 @@ export const colors = {
     fill: { control: 'rgba(120,120,128,0.12)' },
     label: {
       primary: '#000000',
-      secondary: 'rgba(60,60,67,0.60)',
+      secondary: 'rgba(60,60,67,0.75)',
       tertiary: 'rgba(60,60,67,0.30)',
     },
     separator: 'rgba(60,60,67,0.18)',
     accent: '#4B5CF6',
+    accentSolid: '#4B5CF6',
+    onAccent: '#FFFFFF',
     accentSoft: 'rgba(75,92,246,0.12)',
     status: { attended: '#1EA446', bunked: '#E5372B', close: '#C27C00' },
     glass: { fallback: 'rgba(255,255,255,0.72)', border: 'rgba(0,0,0,0.06)' },
@@ -25,6 +27,8 @@ export const colors = {
     },
     separator: 'rgba(84,84,88,0.65)',
     accent: '#8A96FF',
+    accentSolid: '#4B5CF6',
+    onAccent: '#FFFFFF',
     accentSoft: 'rgba(138,150,255,0.18)',
     status: { attended: '#32D74B', bunked: '#FF5A4E', close: '#FFB340' },
     glass: { fallback: 'rgba(28,28,30,0.72)', border: 'rgba(255,255,255,0.08)' },
@@ -67,8 +71,8 @@ export const springs = {
 } as const;
 
 export const timings = {
-  fade: { duration: 180 },
-  emphasized: { duration: 320 },
+  fade: { duration: 180, easing: 'bezier(0.2,0,0,1)' },
+  emphasized: { duration: 320, easing: 'bezier(0.3,0,0,1)' },
 } as const;
 
 export const hapticEvents = {

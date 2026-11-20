@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import Svg, { Circle, Line } from 'react-native-svg';
 import Animated, { useAnimatedProps, type SharedValue } from 'react-native-reanimated';
 import { useTheme } from '../theme';
@@ -10,12 +10,14 @@ export function Gauge({
   size = 168,
   stroke = 14,
   children,
+  accessibilityLabel,
 }: {
   progress: SharedValue<number>;
   threshold: number;
   size?: number;
   stroke?: number;
   children?: React.ReactNode;
+  accessibilityLabel?: string;
 }) {
   const theme = useTheme();
   const r = (size - stroke) / 2;
@@ -30,12 +32,21 @@ export function Gauge({
   const tickR2 = r + stroke / 2 + 4;
   const pad = 4;
   return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+    <View
+      accessibilityLabel={accessibilityLabel}
+      style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
       <Svg
         width={size + pad * 2}
         height={size + pad * 2}
         style={{ position: 'absolute' }}
-        viewBox={`${-pad} ${-pad} ${size + pad * 2} ${size + pad * 2}`}>
+        viewBox={`${-pad} ${-pad} ${size + pad * 2} ${size + pad * 2}`}
+        {...(Platform.OS === 'web'
+          ? {}
+          : {
+              accessible: false,
+              accessibilityElementsHidden: true,
+              importantForAccessibility: 'no-hide-descendants' as const,
+            })}>
         <Circle cx={center} cy={center} r={r} stroke={theme.fill.control} strokeWidth={stroke} fill="none" />
         <AnimatedCircle
           cx={center}
@@ -54,7 +65,7 @@ export function Gauge({
           y1={center + tickR1 * Math.sin(tickAngle)}
           x2={center + tickR2 * Math.cos(tickAngle)}
           y2={center + tickR2 * Math.sin(tickAngle)}
-          stroke={theme.label.tertiary}
+          stroke={theme.label.secondary}
           strokeWidth={3}
           strokeLinecap="round"
         />

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { View, Pressable } from 'react-native';
+import { View, Pressable, AccessibilityInfo, Platform } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -38,17 +38,18 @@ export function Toast({
 
   useEffect(() => {
     if (visible) {
+      progress.value = 1;
+      ty.value = 20;
       progress.value = reduce ? 1 : withTiming(0, { duration: durationMs, easing: Easing.linear });
       ty.value = reduce ? 0 : withTiming(0, { duration: 200 });
       fade.value = withTiming(1, { duration: 200 });
       const timer = setTimeout(() => hideRef.current?.(), durationMs);
+      if (Platform.OS !== 'web') AccessibilityInfo.announceForAccessibility(message);
       return () => clearTimeout(timer);
     }
-    progress.value = 1;
-    ty.value = 20;
     fade.value = withTiming(0, { duration: 150 });
     return undefined;
-  }, [visible, durationMs, progress, ty, fade, reduce]);
+  }, [visible, message, durationMs, progress, ty, fade, reduce]);
 
   const wrap = useAnimatedStyle(() => ({
     transform: [{ translateY: ty.value }],
@@ -59,6 +60,12 @@ export function Toast({
   return (
     <Animated.View
       accessibilityLiveRegion="polite"
+      {...(Platform.OS === 'web'
+        ? {}
+        : {
+            accessibilityElementsHidden: !visible,
+            importantForAccessibility: (visible ? 'auto' : 'no-hide-descendants') as 'auto' | 'no-hide-descendants',
+          })}
       style={[
         { position: 'absolute', left: 16, right: 16, bottom: 24, alignItems: 'center' },
         wrap,
@@ -74,7 +81,7 @@ export function Toast({
                 haptic('undo');
                 onAction();
               }}
-              style={{ paddingVertical: 4, paddingHorizontal: 8, minHeight: 32, justifyContent: 'center' }}>
+              style={{ paddingVertical: 12, paddingHorizontal: 12, minHeight: 44, justifyContent: 'center' }}>
               <Text variant="callout" color="accent" style={{ fontWeight: '600' }}>
                 {action}
               </Text>

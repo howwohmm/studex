@@ -16,8 +16,10 @@ export function Screen({ title, children }: { title: string; children: ReactNode
         paddingBottom: insets.bottom + 120,
         gap: spacing[20],
       }}
-      contentInsetAdjustmentBehavior="automatic">
-      <Text variant="largeTitle">{title}</Text>
+      contentInsetAdjustmentBehavior="never">
+      <Text variant="largeTitle" accessibilityRole="header">
+        {title}
+      </Text>
       {children}
     </ScrollView>
   );

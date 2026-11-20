@@ -28,10 +28,10 @@ export function Button({
   const reduce = useReducedMotion();
   const animated = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const bg =
-    variant === 'primary' ? theme.accent : variant === 'tinted' ? theme.accentSoft : 'transparent';
-  const fg = variant === 'primary' ? '#FFFFFF' : theme.accent;
+    variant === 'primary' ? theme.accentSolid : variant === 'tinted' ? theme.accentSoft : 'transparent';
+  const fg = variant === 'primary' ? theme.onAccent : theme.accent;
   const style: ViewStyle = {
-    height: 50,
+    minHeight: 50,
     borderRadius: radii.md,
     borderCurve: 'continuous' as never,
     backgroundColor: bg,
@@ -89,6 +89,7 @@ export function IconButton({
     <AnimatedPressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      hitSlop={Math.max(0, (44 - size) / 2)}
       style={[
         {
           width: size,

@@ -48,7 +48,10 @@ export function ListRow({
   );
   if (!onPress) return inner;
   return (
-    <Pressable accessibilityRole="button" onPress={onPress}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => (pressed ? { backgroundColor: theme.fill.control } : undefined)}>
       {inner}
     </Pressable>
   );

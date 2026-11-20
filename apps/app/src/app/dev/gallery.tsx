@@ -4,7 +4,7 @@ import { useSharedValue } from 'react-native-reanimated';
 import {
   colors, typeScale, spacing, radii, Text, Button, IconButton, Icon, Card,
   ListRow, Chip, Badge, SegmentedControl, Gauge, NumberTicker, EmptyState,
-  Skeleton, GlassSurface, type TextVariant,
+  Skeleton, GlassSurface, ThemeProvider, type TextVariant,
 } from '@studex/ui';
 import type { IconName } from '@studex/ui';
 
@@ -95,8 +95,12 @@ export default function GalleryScreen() {
   return (
     <ScrollView style={{ flex: 1 }}>
       <Text variant="largeTitle" style={{ padding: 16 }}>Gallery ({scheme})</Text>
-      <Gallery scheme={scheme} />
-      <Gallery scheme={scheme === 'dark' ? 'light' : 'dark'} />
+      <ThemeProvider scheme={scheme}>
+        <Gallery scheme={scheme} />
+      </ThemeProvider>
+      <ThemeProvider scheme={scheme === 'dark' ? 'light' : 'dark'}>
+        <Gallery scheme={scheme === 'dark' ? 'light' : 'dark'} />
+      </ThemeProvider>
     </ScrollView>
   );
 }

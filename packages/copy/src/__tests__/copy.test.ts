@@ -71,6 +71,8 @@ describe('FR-COPY locked strings', () => {
     for (const key of Object.keys(catalog)) {
       expect(key).not.toContain('claude');
       expect(key).not.toContain('boost');
+      expect(key).not.toContain('toast.key.invalid');
+      expect(key).not.toMatch(/^key\.remove\./);
     }
     for (const value of Object.values(catalog)) {
       const s = typeof value === 'string' ? value : value.one + value.other;
@@ -87,6 +89,7 @@ describe('t()', () => {
   });
 
   it('throws on a missing param', () => {
+    // @ts-expect-error — missing params must also fail at compile time
     expect(() => t('today.verdict.below', { percent: '72' })).toThrowError(/missing param/);
   });
 
@@ -100,7 +103,7 @@ describe('t()', () => {
       const entry = catalog[key];
       const params: Record<string, string | number> = {
         percent: '75', n: 2, threshold: '75', subject: 'DBMS',
-        attended: 10, held: 12, i: 1, k: 2, state: 'Bunked', filename: 'x',
+        attended: 10, held: 12, i: 1, k: 2, state: 'Bunked', filename: 'x', max: '80',
       };
       expect(() => t(key, params)).not.toThrow();
       expect(typeof t(key, params)).toBe('string');

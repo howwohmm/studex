@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, useReducedMotion } from 'react-native-reanimated';
 import { useTheme } from '../theme';
@@ -17,6 +18,9 @@ export function SegmentedControl({
   const theme = useTheme();
   const reduce = useReducedMotion();
   const pos = useSharedValue(selected);
+  useEffect(() => {
+    pos.value = reduce ? selected : withSpring(selected, springs.snappy);
+  }, [selected, pos, reduce]);
   const pill = useAnimatedStyle(() => ({
     transform: [{ translateX: `${pos.value * 100}%` }],
   }));
@@ -49,9 +53,9 @@ export function SegmentedControl({
           key={opt}
           accessibilityRole="tab"
           accessibilityState={{ selected: i === selected }}
-          style={{ flex: 1, paddingVertical: 6, alignItems: 'center' }}
+          style={{ flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
           onPress={() => {
-            pos.value = reduce ? i : withSpring(i, springs.snappy);
+            if (i === selected) return;
             haptic('pickerChange');
             onChange(i);
           }}>

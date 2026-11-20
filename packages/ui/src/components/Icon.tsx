@@ -25,6 +25,7 @@ const ICON_MAP = {
 } as const;
 
 export type IconName = keyof typeof ICON_MAP;
+export type IconColor = keyof ThemeColors['label'] | 'accent' | `#${string}` | `rgba(${string})`;
 
 export function Icon({
   name,
@@ -33,7 +34,7 @@ export function Icon({
 }: {
   name: IconName;
   size?: number;
-  color?: keyof ThemeColors['label'] | 'accent' | string;
+  color?: IconColor;
 }) {
   const theme = useTheme();
   const resolved =

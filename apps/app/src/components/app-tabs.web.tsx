@@ -1,5 +1,5 @@
 import { Tabs, TabList, TabTrigger, TabSlot, type TabTriggerSlotProps } from 'expo-router/ui';
-import { useWindowDimensions, View, Pressable, StyleSheet } from 'react-native';
+import { useWindowDimensions, View, Pressable, StyleSheet, type ViewProps } from 'react-native';
 import { t, type CopyKey } from '@studex/copy';
 import { useTheme, Icon, Text, breakpoints, spacing, radii, type IconName } from '@studex/ui';
 
@@ -30,16 +30,27 @@ export default function AppTabs() {
   );
 }
 
-function TabBar({ sidebar, children }: { sidebar: boolean; children: React.ReactNode }) {
+function TabBar({
+  sidebar,
+  children,
+  ...props
+}: { sidebar: boolean; children: React.ReactNode } & ViewProps) {
   const theme = useTheme();
   return (
     <View
+      {...props}
       style={[
         styles.bar,
         sidebar
           ? { width: 240, borderRightWidth: 1, flexDirection: 'column', paddingTop: spacing[24], gap: spacing[4] }
           : { borderTopWidth: 1, flexDirection: 'row', paddingBottom: spacing[8], paddingTop: spacing[8] },
-        { borderColor: theme.separator, backgroundColor: theme.glass.fallback },
+        {
+          borderColor: theme.glass.border,
+          backgroundColor: theme.glass.fallback,
+          backdropFilter: 'blur(20px) saturate(180%)',
+          // @ts-expect-error — vendor-prefixed CSS property not in RN types
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        },
       ]}>
       {children}
     </View>
@@ -59,6 +70,7 @@ function TabItem({
       {...props}
       style={[
         styles.item,
+        !sidebar && { flex: 1 },
         sidebar
           ? {
               flexDirection: 'row',
@@ -80,5 +92,5 @@ function TabItem({
 
 const styles = StyleSheet.create({
   bar: { alignItems: 'stretch' },
-  item: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 48 },
+  item: { alignItems: 'center', justifyContent: 'center', minHeight: 48 },
 });

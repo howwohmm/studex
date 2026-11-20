@@ -27,7 +27,7 @@ export function EmptyState({
         paddingHorizontal: 32,
         paddingBottom: 96,
       }}>
-      <Icon name={icon} size={56} color={theme.label.tertiary} />
+      <Icon name={icon} size={56} color={theme.accent} />
       <Text variant="body" color="secondary" style={{ textAlign: 'center' }}>
         {message}
       </Text>

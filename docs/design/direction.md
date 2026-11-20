@@ -22,17 +22,18 @@ where they conflict, the spec wins. Owner: lead. Implemented in `packages/ui` (P
 | `bg.elevated` | #FFFFFF | #2C2C2E | Sheets, popovers |
 | `fill.control` | rgba(120,120,128,0.12) | rgba(120,120,128,0.24) | Buttons, ring track, chips |
 | `label.primary` | #000000 | #FFFFFF | Main text |
-| `label.secondary` | rgba(60,60,67,0.60) | rgba(235,235,245,0.60) | Supporting text |
+| `label.secondary` | rgba(60,60,67,0.75) | rgba(235,235,245,0.60) | Supporting text |
 | `label.tertiary` | rgba(60,60,67,0.30) | rgba(235,235,245,0.30) | Hints, threshold tick |
 | `separator` | rgba(60,60,67,0.18) | rgba(84,84,88,0.65) | Hairlines |
-| `accent` | #4B5CF6 | #8A96FF | Primary actions, gauge, links |
+| `accent` | #4B5CF6 | #8A96FF | Text links, gauge, tints |
+| `accent.solid` / `onAccent` | #4B5CF6 / #FFFFFF | #4B5CF6 / #FFFFFF | Filled buttons (≥ 4.5:1, test-enforced) |
 | `accent.soft` | rgba(75,92,246,0.12) | rgba(138,150,255,0.18) | Tinted buttons, NOW row |
 | `status.attended` | #1EA446 | #32D74B | Small marks only |
 | `status.bunked` | #E5372B | #FF5A4E | Small marks only |
 | `status.close` | #C27C00 | #FFB340 | Small marks only |
 | `glass.fallback` | rgba(255,255,255,0.72) | rgba(28,28,30,0.72) | Floating chrome without Liquid Glass |
 | `glass.border` | rgba(0,0,0,0.06) | rgba(255,255,255,0.08) | Hairline around fallback glass |
-All text pairs meet WCAG 2.2 AA (NFR-A11Y-001); verify contrast in the gallery.
+Primary and secondary text, filled buttons and the gauge tick meet WCAG 2.2 AA (NFR-A11Y-001), enforced by `packages/ui` contrast tests; `label.tertiary` is for decorative hints only.
 
 ## 3. Typography (system font: SF Pro on iOS, Roboto on Android, system stack on web)
 | Token | Size/line | Weight | Notes |
@@ -105,7 +106,7 @@ Tutor `sparkles`. Marks: `checkmark` · `xmark` · `minus.circle` (cancelled).
   dashed hollow circle + "Did you make it?".
 - **Card:** surface, radius lg, padding 20. **Button:** primary filled accent (height 50, radius md,
   headline white) · tinted (`accent.soft` + accent text) · plain. **Chip**, **Badge**,
-  **SegmentedControl** (native-feeling), **Toast** (glass), **EmptyState** (44 pt symbol in accent,
+  **SegmentedControl** (native-feeling), **Toast** (glass), **EmptyState** (56 pt symbol in accent, optically centered,
   title3, body secondary, one primary button), **Skeleton** (soft shimmer).
 
 ## 10. Screen composition — Today

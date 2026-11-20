@@ -3,11 +3,22 @@ import { useColorScheme } from 'react-native';
 import { colors, type ThemeColors, type ColorScheme } from './tokens';
 
 const ThemeContext = createContext<ThemeColors>(colors.light);
+const SchemeContext = createContext<ColorScheme>('light');
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const scheme = useColorScheme();
-  const resolved: ColorScheme = scheme === 'dark' ? 'dark' : 'light';
-  return <ThemeContext.Provider value={colors[resolved]}>{children}</ThemeContext.Provider>;
+export function ThemeProvider({
+  children,
+  scheme,
+}: {
+  children: ReactNode;
+  scheme?: ColorScheme;
+}) {
+  const system = useColorScheme();
+  const resolved: ColorScheme = scheme ?? (system === 'dark' ? 'dark' : 'light');
+  return (
+    <SchemeContext.Provider value={resolved}>
+      <ThemeContext.Provider value={colors[resolved]}>{children}</ThemeContext.Provider>
+    </SchemeContext.Provider>
+  );
 }
 
 export function useTheme(): ThemeColors {
@@ -15,6 +26,5 @@ export function useTheme(): ThemeColors {
 }
 
 export function useScheme(): ColorScheme {
-  const scheme = useColorScheme();
-  return scheme === 'dark' ? 'dark' : 'light';
+  return useContext(SchemeContext);
 }

@@ -8,20 +8,20 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run"
   },
   "dependencies": {
     "@studex/copy": "workspace:*"
   },
   "peerDependencies": {
-    "@expo/vector-icons": "*",
-    "expo-glass-effect": "*",
-    "expo-haptics": "*",
-    "expo-symbols": "*",
-    "react": "*",
-    "react-native": "*",
-    "react-native-reanimated": "*",
-    "react-native-svg": "*"
+    "@expo/vector-icons": "^15.1.1",
+    "expo-glass-effect": "~57.0.1",
+    "expo-haptics": "~57.0.3",
+    "expo-symbols": "~57.0.2",
+    "react": ">=19",
+    "react-native": ">=0.86",
+    "react-native-reanimated": "~4.5.1",
+    "react-native-svg": "~15.15.0"
   },
   "devDependencies": {
     "@expo/vector-icons": "15.1.1",

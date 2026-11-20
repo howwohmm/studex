@@ -97,6 +97,14 @@ export const catalog = {
   'row.budget.spare': { one: '{n} to spare', other: '{n} to spare' },
   'row.budget.below': 'attend next {n}',
   'manual.placeholder': 'Type in your timetable — coming soon.',
+  'capture.placeholder': 'Timetable scanning arrives in the next build.',
+  'toast.marked': 'Marked.',
+  'today.verdict.unreachable':
+    "You're at {percent}%. Attending everything gets you to {max}% — still short of {threshold}%.",
+  'row.budget.unreachable': 'at best {max}%',
+  'a11y.profile': 'Profile',
+  'a11y.class.options': '{subject} options',
+  'common.back': 'Back',
 } as const;
 
 export type CopyKey = keyof typeof catalog;

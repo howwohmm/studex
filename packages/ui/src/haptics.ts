@@ -1,25 +1,27 @@
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
-import type { HapticEvent } from './tokens';
+import { hapticEvents, type HapticEvent } from './tokens';
 
-/** Fire a haptic; no-ops on web. Respects the OS haptics toggle by construction. */
+/** Fire a haptic; no-ops on web. Mapping lives in tokens.hapticEvents. */
 export function haptic(event: HapticEvent): void {
   if (Platform.OS === 'web') return;
-  switch (event) {
-    case 'mark':
-    case 'undo':
+  const kind = hapticEvents[event];
+  switch (kind) {
+    case 'impactLight':
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       break;
-    case 'endOfDaySweep':
-    case 'backAbove':
-    case 'countUpLanded':
+    case 'notificationSuccess':
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       break;
-    case 'destructiveConfirm':
+    case 'notificationWarning':
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       break;
-    case 'pickerChange':
+    case 'selection':
       void Haptics.selectionAsync();
       break;
+    default: {
+      const _exhaustive: never = kind as never;
+      void _exhaustive;
+    }
   }
 }

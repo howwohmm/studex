@@ -24,7 +24,8 @@ const POLICY: AttendancePolicy = {
   excused: null,
 };
 const THRESHOLD = POLICY.thresholdBp / 100;
-const HORIZON = { termEndKnown: true as const, upcoming: [] };
+// Term end is unknown: no horizon is declared, rather than a known-but-empty one.
+const HORIZON = { termEndKnown: false, upcoming: [] as const };
 
 interface Subject {
   name: string;
@@ -48,7 +49,7 @@ interface Slot {
   end: number;
   hours: number;
   state: SlotState;
-  prev?: SlotState;
+  prev?: { state: SlotState; batch: number };
 }
 const INITIAL: Slot[] = [
   { id: '1', subject: SUBJECTS[0]!, start: 540, end: 600, hours: 1, state: 'attended' },
@@ -60,29 +61,33 @@ const INITIAL: Slot[] = [
 const CLOCKS = [570, 750, 1050] as const; // Morning 9:30 · Midday 12:30 · Evening 17:30
 
 type Action =
-  | { type: 'mark'; id: string; state: 'attended' | 'bunked' | 'cancelled' }
+  | { type: 'mark'; id: string; state: 'attended' | 'bunked' | 'cancelled'; batch: number }
   | { type: 'reopen'; id: string }
-  | { type: 'undo' }
-  | { type: 'sweep'; clock: number };
+  | { type: 'undo'; batch: number }
+  | { type: 'sweep'; clock: number; batch: number };
 
 function reducer(slots: Slot[], action: Action): Slot[] {
   switch (action.type) {
     case 'mark':
       return slots.map((s) =>
-        s.id === action.id ? { ...s, prev: s.state, state: action.state } : s,
+        s.id === action.id ? { ...s, prev: { state: s.state, batch: action.batch }, state: action.state } : s,
       );
     case 'reopen':
-      return slots.map((s) => (s.id === action.id ? { ...s, prev: s.state, state: 'unmarked' } : s));
+      return slots.map((s) => {
+        if (s.id !== action.id) return s;
+        const { prev: _prev, ...rest } = s;
+        return { ...rest, state: 'unmarked' as const };
+      });
     case 'undo':
       return slots.map((s) => {
-        if (!s.prev) return s;
+        if (!s.prev || s.prev.batch !== action.batch) return s;
         const { prev, ...rest } = s;
-        return { ...rest, state: prev };
+        return { ...rest, state: prev.state };
       });
     case 'sweep':
       return slots.map((s) =>
         s.state === 'unmarked' && s.start <= action.clock
-          ? { ...s, prev: s.state, state: 'attended' }
+          ? { ...s, prev: { state: s.state, batch: action.batch }, state: 'attended' }
           : s,
       );
   }
@@ -125,6 +130,7 @@ export default function TodayDemo() {
   const [undoVisible, setUndoVisible] = useState(false);
   const [backAbove, setBackAbove] = useState(false);
   const wasEligible = useRef(true);
+  const batchRef = useRef(0);
 
   // ── hero count-up ──
   const pctShared = useSharedValue(0);
@@ -140,10 +146,10 @@ export default function TodayDemo() {
   const eligible = isEligible(tl, POLICY) === true;
   const pct = displayPercent(tl, POLICY, 0);
   const pctNum = pct === null ? 0 : Number(pct);
-  const budget = eligible ? safeNowBudget(tl, HORIZON, POLICY) : null;
+  const budget = safeNowBudget(tl, HORIZON, POLICY);
   const rec = eligible ? null : recovery(tl, HORIZON, POLICY);
   const recN = rec && rec.kind === 'recoverable' ? rec.n : null;
-  const band = copyBand(tl, budget, POLICY);
+  const band = copyBand(tl, eligible ? budget : 0, POLICY);
   const sentence =
     band === 'above' && budget !== null
       ? t('today.verdict.above', { percent: pct ?? '', n: budget, threshold: THRESHOLD })
@@ -151,7 +157,13 @@ export default function TodayDemo() {
         ? t('today.verdict.close', { percent: pct ?? '', threshold: THRESHOLD })
         : band === 'below' && recN !== null
           ? t('today.verdict.below', { percent: pct ?? '', n: recN, threshold: THRESHOLD })
-          : '';
+          : band === 'below' && rec && rec.kind === 'unreachable'
+            ? t('today.verdict.unreachable', {
+                percent: pct ?? '',
+                max: rec.maxReachableDisplay ?? '—',
+                threshold: THRESHOLD,
+              })
+            : '';
   const bandColor =
     band === 'below' ? theme.status.bunked : band === 'close' ? theme.status.close : theme.status.attended;
 
@@ -182,7 +194,7 @@ export default function TodayDemo() {
 
   function mark(slot: Slot, state: 'attended' | 'bunked' | 'cancelled') {
     haptic('mark');
-    dispatch({ type: 'mark', id: slot.id, state });
+    dispatch({ type: 'mark', id: slot.id, state, batch: ++batchRef.current });
     setUndoVisible(true);
   }
 
@@ -197,8 +209,9 @@ export default function TodayDemo() {
   }).format(new Date(`${TODAY}T00:00:00`));
 
   return (
+    <View style={{ flex: 1, backgroundColor: theme.bg.grouped }}>
     <ScrollView
-      style={{ flex: 1, backgroundColor: theme.bg.grouped }}
+      style={{ flex: 1 }}
       contentContainerStyle={{
         paddingTop: insets.top + spacing[8],
         paddingHorizontal: spacing[20],
@@ -214,7 +227,7 @@ export default function TodayDemo() {
             <Badge label={t('demo.badge')} color={theme.label.secondary} />
           </View>
         </View>
-        <IconButton onPress={() => {}} size={32} accessibilityLabel="Profile">
+        <IconButton onPress={() => {}} size={32} accessibilityLabel={t('a11y.profile')}>
           <Icon name="person" size={20} color="secondary" />
         </IconButton>
       </View>
@@ -258,8 +271,8 @@ export default function TodayDemo() {
       ) : null}
       {upcoming.length > 0 ? (
         <Section title={t('today.section.upcoming')}>
-          {upcoming.map((s) => (
-            <ClassRow key={s.id} slot={s} clock={clock} onMark={mark} onReopen={(sl) => dispatch({ type: 'reopen', id: sl.id })} />
+          {upcoming.map((s, i) => (
+            <ClassRow key={s.id} slot={s} clock={clock} menuUp={i === upcoming.length - 1} onMark={mark} onReopen={(sl) => dispatch({ type: 'reopen', id: sl.id })} />
           ))}
         </Section>
       ) : null}
@@ -278,7 +291,7 @@ export default function TodayDemo() {
             title={t('today.sweep', { n: remaining })}
             onPress={() => {
               haptic('endOfDaySweep');
-              dispatch({ type: 'sweep', clock });
+              dispatch({ type: 'sweep', clock, batch: ++batchRef.current });
               setUndoVisible(true);
             }}
           />
@@ -294,9 +307,9 @@ export default function TodayDemo() {
 
       <Toast
         visible={undoVisible}
-        message="Marked."
+        message={t('toast.marked')}
         action={t('common.undo')}
-        onAction={() => { setUndoVisible(false); dispatch({ type: 'undo' }); }}
+        onAction={() => { setUndoVisible(false); dispatch({ type: 'undo', batch: batchRef.current }); }}
         onHide={() => setUndoVisible(false)}
       />
       <Toast
@@ -306,6 +319,7 @@ export default function TodayDemo() {
         durationMs={3000}
       />
     </ScrollView>
+    </View>
   );
 }
 
@@ -328,10 +342,11 @@ function subjectStats(slot: Slot) {
     return { text: t('row.budget.spare', { n: k }), tone: k > 0 ? 'ok' : 'warn' };
   }
   const r = recovery(st, HORIZON, POLICY);
-  if (r.kind !== 'recoverable') {
-    return { text: t('row.budget.spare', { n: 0 }), tone: 'bad' };
+  if (r.kind === 'recoverable') {
+    return { text: t('row.budget.below', { n: r.n }), tone: 'bad' };
   }
-  return { text: t('row.budget.below', { n: r.n }), tone: 'bad' };
+  const max = r.kind === 'unreachable' ? r.maxReachableDisplay : null;
+  return { text: t('row.budget.unreachable', { max: max ?? '—' }), tone: 'bad' };
 }
 
 function ClassRow({
@@ -341,11 +356,13 @@ function ClassRow({
   past,
   onMark,
   onReopen,
+  menuUp,
 }: {
   slot: Slot;
   clock: number;
   isNow?: boolean;
   past?: boolean;
+  menuUp?: boolean;
   onMark: (s: Slot, m: 'attended' | 'bunked' | 'cancelled') => void;
   onReopen: (s: Slot) => void;
 }) {
@@ -363,7 +380,11 @@ function ClassRow({
   function press(kind: 'attended' | 'bunked') {
     setFlashKind(kind);
     flash.value = 1;
-    setTimeout(() => onMark(slot, kind), reduce ? 0 : 180);
+    setTimeout(() => {
+      flash.value = 0;
+      setFlashKind(null);
+      onMark(slot, kind);
+    }, reduce ? 0 : 180);
   }
 
   const flashColor =
@@ -379,7 +400,7 @@ function ClassRow({
 
   return (
     <Pressable
-      accessibilityLabel={future && !marked ? `${slot.subject.name} options` : undefined}
+      accessibilityLabel={future && !marked ? t('a11y.class.options', { subject: slot.subject.name }) : undefined}
       onLongPress={future && !marked ? () => setMenuOpen(true) : undefined}
       delayLongPress={400}
       style={[
@@ -437,13 +458,16 @@ function ClassRow({
         </Pressable>
       ) : future ? (
         <View>
-          <IconButton onPress={() => setMenuOpen((o) => !o)} size={36} accessibilityLabel="Class options">
+          <IconButton
+            onPress={() => setMenuOpen((o) => !o)}
+            size={36}
+            accessibilityLabel={t('a11y.class.options', { subject: slot.subject.name })}>
             <Icon name="more" size={18} color="secondary" />
           </IconButton>
           {menuOpen ? (
             <View
               style={{
-                position: 'absolute', top: 40, right: 0, zIndex: 10,
+                position: 'absolute', bottom: menuUp ? 40 : undefined, top: menuUp ? undefined : 40, right: 0, zIndex: 10,
                 backgroundColor: theme.bg.elevated, borderRadius: radii.md,
                 borderCurve: 'continuous' as never, borderWidth: 1, borderColor: theme.separator,
                 shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 24, shadowOffset: { width: 0, height: 8 },

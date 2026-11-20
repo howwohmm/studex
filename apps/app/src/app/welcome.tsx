@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View, Pressable } from 'react-native';
+import { View, Pressable, ScrollView } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, useReducedMotion, Easing,
 } from 'react-native-reanimated';
@@ -36,10 +36,10 @@ export default function WelcomeScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: theme.bg.grouped,
+    <ScrollView
+      style={{ flex: 1, backgroundColor: theme.bg.grouped }}
+      contentContainerStyle={{
+        flexGrow: 1,
         paddingTop: insets.top + spacing[56] + spacing[40],
         paddingHorizontal: spacing[24],
         paddingBottom: insets.bottom + spacing[24],
@@ -84,10 +84,10 @@ export default function WelcomeScreen() {
           ))}
         </View>
       </View>
-      <View style={{ flex: 1 }} />
+      <View style={{ flex: 1, minHeight: spacing[32] }} />
       <Staggered index={5}>
         <View style={{ gap: spacing[8] }}>
-          <Button title={t('welcome.cta')} onPress={() => router.back()} />
+          <Button title={t('welcome.cta')} onPress={() => router.push('/capture')} />
           <Pressable
             accessibilityRole="link"
             onPress={() => router.push('/manual-entry')}
@@ -96,6 +96,6 @@ export default function WelcomeScreen() {
           </Pressable>
         </View>
       </Staggered>
-    </View>
+    </ScrollView>
   );
 }
