@@ -65,8 +65,12 @@ function FormDialog({ action, state, today, apply, close, open }) {
     }
     if (type === 'task') {
       if (!get('title')) { setError('Enter a title for this assignment.'); return; }
+      const status = get('status');
+      const beforeComplete = status === 'Completed'
+        ? item?.status === 'Completed' ? item.beforeComplete : item?.status
+        : undefined;
       next = { ...state, tasks: replace(state.tasks, { id: item?.id || uid(), title: get('title'), subjectId: get('subjectId'),
-        type: get('type'), priority: get('priority'), status: get('status'), due: get('due'), effort: get('effort'), description: get('description') }) };
+        type: get('type'), priority: get('priority'), status, beforeComplete, due: get('due'), effort: get('effort'), description: get('description') }) };
       notice = item ? 'Assignment updated.' : 'Assignment added.';
     }
     if (type === 'record') {
