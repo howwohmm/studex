@@ -1,18 +1,41 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { ScrollView, View, Pressable } from 'react-native';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming,
-  useReducedMotion, Easing,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  useReducedMotion,
+  Easing,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@studex/copy';
 import {
-  tally, isEligible, displayPercent, safeNowBudget, recovery, copyBand,
-  type AttendancePolicy, type Mark, type Tally, type Units, type Baseline,
+  tally,
+  isEligible,
+  displayPercent,
+  safeNowBudget,
+  recovery,
+  copyBand,
+  type AttendancePolicy,
+  type Mark,
+  type Tally,
+  type Units,
+  type Baseline,
 } from '@studex/core';
 import {
-  useTheme, Text, Card, Badge, Gauge, Button, Toast, haptic,
-  Icon, IconButton, SegmentedControl, spacing, radii,
+  useTheme,
+  Text,
+  Card,
+  Badge,
+  Gauge,
+  Button,
+  Toast,
+  haptic,
+  Icon,
+  IconButton,
+  SegmentedControl,
+  spacing,
+  radii,
 } from '@studex/ui';
 
 /* ---------- clearly fictional fixture (dev only) ---------- */
@@ -38,7 +61,12 @@ const SUBJECTS: Subject[] = [
   { name: 'OS', room: 'LH-105', kind: 'Lecture', baseline: { attended: 5, held: 7, asOf: null } },
   { name: 'CN', room: 'C-302', kind: 'Lab', baseline: { attended: 7, held: 9, asOf: null } },
   { name: 'DAA', room: 'LH-204', kind: 'Lecture', baseline: { attended: 6, held: 8, asOf: null } },
-  { name: 'PE-II', room: 'Sports Cplx', kind: 'Elective', baseline: { attended: 6, held: 8, asOf: null } },
+  {
+    name: 'PE-II',
+    room: 'Sports Cplx',
+    kind: 'Elective',
+    baseline: { attended: 6, held: 8, asOf: null },
+  },
 ];
 
 type SlotState = 'unmarked' | 'attended' | 'bunked' | 'cancelled';
@@ -70,7 +98,9 @@ function reducer(slots: Slot[], action: Action): Slot[] {
   switch (action.type) {
     case 'mark':
       return slots.map((s) =>
-        s.id === action.id ? { ...s, prev: { state: s.state, batch: action.batch }, state: action.state } : s,
+        s.id === action.id
+          ? { ...s, prev: { state: s.state, batch: action.batch }, state: action.state }
+          : s,
       );
     case 'reopen':
       return slots.map((s) => {
@@ -117,7 +147,9 @@ function fmt(min: number) {
 }
 
 function Dot({ color, size = 6 }: { color: string; size?: number }) {
-  return <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: color }} />;
+  return (
+    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: color }} />
+  );
 }
 
 export default function TodayDemo() {
@@ -165,19 +197,28 @@ export default function TodayDemo() {
               })
             : '';
   const bandColor =
-    band === 'below' ? theme.status.bunked : band === 'close' ? theme.status.close : theme.status.attended;
+    band === 'below'
+      ? theme.status.bunked
+      : band === 'close'
+        ? theme.status.close
+        : theme.status.attended;
 
   useEffect(() => {
     if (reduce) {
       pctShared.value = pctNum / 100;
-      setCounted(pctNum);
       return;
     }
-    pctShared.value = withTiming(pctNum / 100, { duration: 1200, easing: Easing.out(Easing.cubic) });
+    pctShared.value = withTiming(pctNum / 100, {
+      duration: 1200,
+      easing: Easing.out(Easing.cubic),
+    });
     const step = Math.max(16, 1200 / Math.max(1, Math.abs(pctNum)));
     const id = setInterval(() => {
       setCounted((c) => {
-        if (c === pctNum) { clearInterval(id); return c; }
+        if (c === pctNum) {
+          clearInterval(id);
+          return c;
+        }
         return c + Math.sign(pctNum - c);
       });
     }, step);
@@ -210,115 +251,154 @@ export default function TodayDemo() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg.grouped }}>
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={{
-        paddingTop: insets.top + spacing[8],
-        paddingHorizontal: spacing[20],
-        paddingBottom: insets.bottom + spacing[40],
-        gap: spacing[20],
-      }}>
-      {/* header */}
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text variant="largeTitle">{t('today.title')}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[8] }}>
-            <Text variant="subhead" color="secondary">{dateLabel}</Text>
-            <Badge label={t('demo.badge')} color={theme.label.secondary} />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingTop: insets.top + spacing[8],
+          paddingHorizontal: spacing[20],
+          paddingBottom: insets.bottom + spacing[40],
+          gap: spacing[20],
+        }}
+      >
+        {/* header */}
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          <View style={{ flex: 1, gap: 4 }}>
+            <Text variant="largeTitle">{t('today.title')}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[8] }}>
+              <Text variant="subhead" color="secondary">
+                {dateLabel}
+              </Text>
+              <Badge label={t('demo.badge')} color={theme.label.secondary} />
+            </View>
           </View>
+          <IconButton onPress={() => {}} size={32} accessibilityLabel={t('a11y.profile')}>
+            <Icon name="person" size={20} color="secondary" />
+          </IconButton>
         </View>
-        <IconButton onPress={() => {}} size={32} accessibilityLabel={t('a11y.profile')}>
-          <Icon name="person" size={20} color="secondary" />
-        </IconButton>
-      </View>
 
-      {/* hero card */}
-      <Card style={{ alignItems: 'center', gap: spacing[16], paddingVertical: spacing[24] }}>
-        <Gauge progress={pctShared} threshold={THRESHOLD} size={220} stroke={16}>
-          <View style={{ alignItems: 'center' }}>
-            <Text
+        {/* hero card */}
+        <Card style={{ alignItems: 'center', gap: spacing[16], paddingVertical: spacing[24] }}>
+          <Gauge progress={pctShared} threshold={THRESHOLD} size={220} stroke={16}>
+            <View style={{ alignItems: 'center' }}>
+              <Text
+                style={{
+                  fontSize: 68,
+                  lineHeight: 72,
+                  fontWeight: '700',
+                  letterSpacing: -1.5,
+                  fontVariant: ['tabular-nums'],
+                  color: theme.label.primary,
+                }}
+              >
+                {reduce ? pctNum : counted}
+                <Text style={{ fontSize: 31, fontWeight: '700', color: theme.label.secondary }}>
+                  %
+                </Text>
+              </Text>
+              <Text variant="footnote" color="secondary">
+                {t('today.card.caption')}
+              </Text>
+            </View>
+          </Gauge>
+          {sentence ? (
+            <View
               style={{
-                fontSize: 68,
-                lineHeight: 72,
-                fontWeight: '700',
-                letterSpacing: -1.5,
-                fontVariant: ['tabular-nums'],
-                color: theme.label.primary,
-              }}>
-              {counted}
-              <Text style={{ fontSize: 31, fontWeight: '700', color: theme.label.secondary }}>%</Text>
-            </Text>
-            <Text variant="footnote" color="secondary">{t('today.card.caption')}</Text>
-          </View>
-        </Gauge>
-        {sentence ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[8], paddingHorizontal: spacing[8] }}>
-            <Dot color={bandColor} size={8} />
-            <Text variant="title3" style={{ fontWeight: '500', textAlign: 'center' }}>
-              {sentence}
-            </Text>
-          </View>
-        ) : null}
-      </Card>
-
-      {/* sections */}
-      {now.length > 0 ? (
-        <Section title={t('today.section.now')}>
-          {now.map((s) => (
-            <ClassRow key={s.id} slot={s} clock={clock} isNow onMark={mark} onReopen={(sl) => dispatch({ type: 'reopen', id: sl.id })} />
-          ))}
-        </Section>
-      ) : null}
-      {upcoming.length > 0 ? (
-        <Section title={t('today.section.upcoming')}>
-          {upcoming.map((s, i) => (
-            <ClassRow key={s.id} slot={s} clock={clock} menuUp={i === upcoming.length - 1} onMark={mark} onReopen={(sl) => dispatch({ type: 'reopen', id: sl.id })} />
-          ))}
-        </Section>
-      ) : null}
-      {earlier.length > 0 ? (
-        <Section title={t('today.section.earlier')}>
-          {earlier.map((s) => (
-            <ClassRow key={s.id} slot={s} clock={clock} past onMark={mark} onReopen={(sl) => dispatch({ type: 'reopen', id: sl.id })} />
-          ))}
-        </Section>
-      ) : null}
-
-      {/* end-of-day sweep */}
-      {clockIdx === 2 && remaining > 0 ? (
-        <Card style={{ gap: spacing[12] }}>
-          <Button
-            title={t('today.sweep', { n: remaining })}
-            onPress={() => {
-              haptic('endOfDaySweep');
-              dispatch({ type: 'sweep', clock, batch: ++batchRef.current });
-              setUndoVisible(true);
-            }}
-          />
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: spacing[8],
+                paddingHorizontal: spacing[8],
+              }}
+            >
+              <Dot color={bandColor} size={8} />
+              <Text variant="title3" style={{ fontWeight: '500', textAlign: 'center' }}>
+                {sentence}
+              </Text>
+            </View>
+          ) : null}
         </Card>
-      ) : null}
 
-      {/* dev-only clock control */}
-      <SegmentedControl
-        options={[t('demo.clock.morning'), t('demo.clock.midday'), t('demo.clock.evening')]}
-        selected={clockIdx}
-        onChange={setClockIdx}
-      />
+        {/* sections */}
+        {now.length > 0 ? (
+          <Section title={t('today.section.now')}>
+            {now.map((s) => (
+              <ClassRow
+                key={s.id}
+                slot={s}
+                clock={clock}
+                isNow
+                onMark={mark}
+                onReopen={(sl) => dispatch({ type: 'reopen', id: sl.id })}
+              />
+            ))}
+          </Section>
+        ) : null}
+        {upcoming.length > 0 ? (
+          <Section title={t('today.section.upcoming')}>
+            {upcoming.map((s, i) => (
+              <ClassRow
+                key={s.id}
+                slot={s}
+                clock={clock}
+                menuUp={i === upcoming.length - 1}
+                onMark={mark}
+                onReopen={(sl) => dispatch({ type: 'reopen', id: sl.id })}
+              />
+            ))}
+          </Section>
+        ) : null}
+        {earlier.length > 0 ? (
+          <Section title={t('today.section.earlier')}>
+            {earlier.map((s) => (
+              <ClassRow
+                key={s.id}
+                slot={s}
+                clock={clock}
+                past
+                onMark={mark}
+                onReopen={(sl) => dispatch({ type: 'reopen', id: sl.id })}
+              />
+            ))}
+          </Section>
+        ) : null}
 
-      <Toast
-        visible={undoVisible}
-        message={t('toast.marked')}
-        action={t('common.undo')}
-        onAction={() => { setUndoVisible(false); dispatch({ type: 'undo', batch: batchRef.current }); }}
-        onHide={() => setUndoVisible(false)}
-      />
-      <Toast
-        visible={backAbove}
-        message={t('today.toast.recovered', { threshold: THRESHOLD })}
-        onHide={() => setBackAbove(false)}
-        durationMs={3000}
-      />
-    </ScrollView>
+        {/* end-of-day sweep */}
+        {clockIdx === 2 && remaining > 0 ? (
+          <Card style={{ gap: spacing[12] }}>
+            <Button
+              title={t('today.sweep', { n: remaining })}
+              onPress={() => {
+                haptic('endOfDaySweep');
+                dispatch({ type: 'sweep', clock, batch: ++batchRef.current });
+                setUndoVisible(true);
+              }}
+            />
+          </Card>
+        ) : null}
+
+        {/* dev-only clock control */}
+        <SegmentedControl
+          options={[t('demo.clock.morning'), t('demo.clock.midday'), t('demo.clock.evening')]}
+          selected={clockIdx}
+          onChange={setClockIdx}
+        />
+
+        <Toast
+          visible={undoVisible}
+          message={t('toast.marked')}
+          action={t('common.undo')}
+          onAction={() => {
+            setUndoVisible(false);
+            dispatch({ type: 'undo', batch: batchRef.current });
+          }}
+          onHide={() => setUndoVisible(false)}
+        />
+        <Toast
+          visible={backAbove}
+          message={t('today.toast.recovered', { threshold: THRESHOLD })}
+          onHide={() => setBackAbove(false)}
+          durationMs={3000}
+        />
+      </ScrollView>
     </View>
   );
 }
@@ -375,47 +455,78 @@ function ClassRow({
   const [flashKind, setFlashKind] = useState<'attended' | 'bunked' | null>(null);
   const stats = useMemo(() => subjectStats(slot), [slot]);
   const toneColor =
-    stats.tone === 'ok' ? theme.status.attended : stats.tone === 'warn' ? theme.status.close : theme.status.bunked;
+    stats.tone === 'ok'
+      ? theme.status.attended
+      : stats.tone === 'warn'
+        ? theme.status.close
+        : theme.status.bunked;
 
   function press(kind: 'attended' | 'bunked') {
     setFlashKind(kind);
     flash.value = 1;
-    setTimeout(() => {
-      flash.value = 0;
-      setFlashKind(null);
-      onMark(slot, kind);
-    }, reduce ? 0 : 180);
+    setTimeout(
+      () => {
+        flash.value = 0;
+        setFlashKind(null);
+        onMark(slot, kind);
+      },
+      reduce ? 0 : 180,
+    );
   }
 
   const flashColor =
-    flashKind === 'attended' ? theme.status.attended : flashKind === 'bunked' ? theme.status.bunked : 'transparent';
-  const flashStyle = useAnimatedStyle(() => ({ backgroundColor: flash.value ? flashColor : theme.fill.control }));
+    flashKind === 'attended'
+      ? theme.status.attended
+      : flashKind === 'bunked'
+        ? theme.status.bunked
+        : 'transparent';
+  const flashStyle = useAnimatedStyle(() => ({
+    backgroundColor: flash.value ? flashColor : theme.fill.control,
+  }));
 
   const pillColor =
-    slot.state === 'attended' ? theme.status.attended :
-    slot.state === 'bunked' ? theme.status.bunked : theme.label.secondary;
+    slot.state === 'attended'
+      ? theme.status.attended
+      : slot.state === 'bunked'
+        ? theme.status.bunked
+        : theme.label.secondary;
   const pillLabel =
-    slot.state === 'attended' ? t('today.state.attended') :
-    slot.state === 'bunked' ? t('today.state.bunked') : t('today.state.cancelled');
+    slot.state === 'attended'
+      ? t('today.state.attended')
+      : slot.state === 'bunked'
+        ? t('today.state.bunked')
+        : t('today.state.cancelled');
 
   return (
     <Pressable
-      accessibilityLabel={future && !marked ? t('a11y.class.options', { subject: slot.subject.name }) : undefined}
+      accessibilityLabel={
+        future && !marked ? t('a11y.class.options', { subject: slot.subject.name }) : undefined
+      }
       onLongPress={future && !marked ? () => setMenuOpen(true) : undefined}
       delayLongPress={400}
       style={[
         {
-          flexDirection: 'row', alignItems: 'center', gap: spacing[12],
-          paddingVertical: 10, paddingHorizontal: spacing[16], minHeight: 56,
-          borderBottomWidth: 1, borderBottomColor: theme.separator,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: spacing[12],
+          paddingVertical: 10,
+          paddingHorizontal: spacing[16],
+          minHeight: 56,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.separator,
         },
         isNow ? { backgroundColor: theme.accentSoft } : null,
         menuOpen ? { zIndex: 20 } : null,
-      ]}>
+      ]}
+    >
       {/* time column */}
       <View style={{ width: 56 }}>
-        <Text variant="headline" tabular>{fmt(slot.start)}</Text>
-        <Text variant="caption1" color="secondary" tabular>{fmt(slot.end)}</Text>
+        <Text variant="headline" tabular>
+          {fmt(slot.start)}
+        </Text>
+        <Text variant="caption1" color="secondary" tabular>
+          {fmt(slot.end)}
+        </Text>
       </View>
       {/* subject + meta */}
       <View style={{ flex: 1, gap: 2 }}>
@@ -430,16 +541,24 @@ function ClassRow({
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <View
               style={{
-                width: 12, height: 12, borderRadius: 6,
-                borderWidth: 1.5, borderStyle: 'dashed', borderColor: theme.label.tertiary,
+                width: 12,
+                height: 12,
+                borderRadius: 6,
+                borderWidth: 1.5,
+                borderStyle: 'dashed',
+                borderColor: theme.label.tertiary,
               }}
             />
-            <Text variant="caption1" color="secondary">{t('today.unmarked.prompt')}</Text>
+            <Text variant="caption1" color="secondary">
+              {t('today.unmarked.prompt')}
+            </Text>
           </View>
         ) : (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
             <Dot color={toneColor} />
-            <Text variant="caption1" color="secondary" tabular>{stats.text}</Text>
+            <Text variant="caption1" color="secondary" tabular>
+              {stats.text}
+            </Text>
           </View>
         )}
       </View>
@@ -448,12 +567,19 @@ function ClassRow({
         <Pressable accessibilityRole="button" onPress={() => onReopen(slot)}>
           <View
             style={{
-              flexDirection: 'row', alignItems: 'center', gap: 6,
-              backgroundColor: theme.fill.control, borderRadius: radii.pill,
-              paddingHorizontal: 10, paddingVertical: 5,
-            }}>
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+              backgroundColor: theme.fill.control,
+              borderRadius: radii.pill,
+              paddingHorizontal: 10,
+              paddingVertical: 5,
+            }}
+          >
             <Dot color={pillColor} />
-            <Text variant="caption1" color="secondary">{pillLabel}</Text>
+            <Text variant="caption1" color="secondary">
+              {pillLabel}
+            </Text>
           </View>
         </Pressable>
       ) : future ? (
@@ -461,22 +587,44 @@ function ClassRow({
           <IconButton
             onPress={() => setMenuOpen((o) => !o)}
             size={36}
-            accessibilityLabel={t('a11y.class.options', { subject: slot.subject.name })}>
+            accessibilityLabel={t('a11y.class.options', { subject: slot.subject.name })}
+          >
             <Icon name="more" size={18} color="secondary" />
           </IconButton>
           {menuOpen ? (
             <View
               style={{
-                position: 'absolute', bottom: menuUp ? 40 : undefined, top: menuUp ? undefined : 40, right: 0, zIndex: 10,
-                backgroundColor: theme.bg.elevated, borderRadius: radii.md,
-                borderCurve: 'continuous' as never, borderWidth: 1, borderColor: theme.separator,
-                shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 24, shadowOffset: { width: 0, height: 8 },
-                elevation: 6, minWidth: 140,
-              }}>
+                position: 'absolute',
+                bottom: menuUp ? 40 : undefined,
+                top: menuUp ? undefined : 40,
+                right: 0,
+                zIndex: 10,
+                backgroundColor: theme.bg.elevated,
+                borderRadius: radii.md,
+                borderCurve: 'continuous' as never,
+                borderWidth: 1,
+                borderColor: theme.separator,
+                shadowColor: '#000',
+                shadowOpacity: 0.08,
+                shadowRadius: 24,
+                shadowOffset: { width: 0, height: 8 },
+                elevation: 6,
+                minWidth: 140,
+              }}
+            >
               <Pressable
                 accessibilityRole="menuitem"
-                style={{ paddingVertical: 12, paddingHorizontal: 16, minHeight: 44, justifyContent: 'center' }}
-                onPress={() => { setMenuOpen(false); onMark(slot, 'cancelled'); }}>
+                style={{
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  minHeight: 44,
+                  justifyContent: 'center',
+                }}
+                onPress={() => {
+                  setMenuOpen(false);
+                  onMark(slot, 'cancelled');
+                }}
+              >
                 <Text variant="body">{t('mark.cancelled')}</Text>
               </Pressable>
             </View>
@@ -485,12 +633,19 @@ function ClassRow({
       ) : (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[8] }}>
           {(['attended', 'bunked'] as const).map((kind) => (
-            <Animated.View key={kind} style={[{ borderRadius: 22 }, kind === flashKind ? flashStyle : { backgroundColor: theme.fill.control }]}>
+            <Animated.View
+              key={kind}
+              style={[
+                { borderRadius: 22 },
+                kind === flashKind ? flashStyle : { backgroundColor: theme.fill.control },
+              ]}
+            >
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={kind === 'attended' ? t('mark.attended') : t('mark.bunked')}
                 style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
-                onPress={() => press(kind)}>
+                onPress={() => press(kind)}
+              >
                 <Icon name={kind} size={20} color="primary" />
               </Pressable>
             </Animated.View>

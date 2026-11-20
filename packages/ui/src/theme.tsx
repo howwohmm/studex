@@ -5,13 +5,7 @@ import { colors, type ThemeColors, type ColorScheme } from './tokens';
 const ThemeContext = createContext<ThemeColors>(colors.light);
 const SchemeContext = createContext<ColorScheme>('light');
 
-export function ThemeProvider({
-  children,
-  scheme,
-}: {
-  children: ReactNode;
-  scheme?: ColorScheme;
-}) {
+export function ThemeProvider({ children, scheme }: { children: ReactNode; scheme?: ColorScheme }) {
   const system = useColorScheme();
   const resolved: ColorScheme = scheme ?? (system === 'dark' ? 'dark' : 'light');
   return (

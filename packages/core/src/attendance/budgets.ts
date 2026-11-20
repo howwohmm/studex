@@ -1,16 +1,6 @@
-import {
-  assertCapped,
-  assertPolicy,
-  assertTally,
-  assertUnits,
-  floorDivBig,
-} from './validate';
+import { assertCapped, assertPolicy, assertTally, assertUnits, floorDivBig } from './validate';
 import { isEligible, roundedPercentBig } from './eligibility';
-import type {
-  AttendancePolicy,
-  Horizon,
-  Tally,
-} from './types';
+import type { AttendancePolicy, Horizon, Tally } from './types';
 
 export type Recovery =
   | { kind: 'not_started' }
@@ -94,18 +84,14 @@ function virtualRecoveryCount(A: bigint, H: bigint, policy: AttendancePolicy): n
   return Number(hi);
 }
 
-export function safeNowBudget(
-  t: Tally,
-  h: Horizon,
-  policy: AttendancePolicy,
-): number | null {
+export function safeNowBudget(t: Tally, h: Horizon, policy: AttendancePolicy): number | null {
   assertPolicy(policy);
   assertTally(t);
   assertHorizon(h);
   if (t.held === 0) return null;
   const eligible = isEligible(t, policy);
   if (eligible !== true) return 0;
-  let A = BigInt(t.attended);
+  const A = BigInt(t.attended);
   let H = BigInt(t.held);
   let k = 0;
   for (const occ of h.upcoming) {
@@ -117,11 +103,7 @@ export function safeNowBudget(
   return k + virtualBunkBudget(A, H, policy);
 }
 
-export function recovery(
-  t: Tally,
-  h: Horizon,
-  policy: AttendancePolicy,
-): Recovery {
+export function recovery(t: Tally, h: Horizon, policy: AttendancePolicy): Recovery {
   assertPolicy(policy);
   assertTally(t);
   assertHorizon(h);

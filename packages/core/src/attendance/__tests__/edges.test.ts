@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   colorBand,
   copyBand,
-  displayPercent,
   isEligible,
   recovery,
   safeNowBudget,
@@ -10,13 +9,7 @@ import {
   tally,
   termEndForecast,
 } from '../index';
-import type {
-  AttendancePolicy,
-  Horizon,
-  Mark,
-  Tally,
-  UpcomingOccurrence,
-} from '../index';
+import type { AttendancePolicy, Horizon, Mark, Tally, UpcomingOccurrence } from '../index';
 
 const exact = (thresholdBp = 7500): AttendancePolicy => ({
   thresholdBp,
@@ -132,12 +125,16 @@ describe('§6.3 term-end forecast edges', () => {
 describe('§6.8 simulate', () => {
   it('FR-ATT-010: returns the tally after each step', () => {
     const p = exact();
-    const out = simulate(t(0, 0), [
-      { units: 1, status: 'attended' },
-      { units: 2, status: 'bunked' },
-      { units: 1, status: 'cancelled' },
-      { units: 1, status: 'excused', excusedKind: 'on_duty' },
-    ], p);
+    const out = simulate(
+      t(0, 0),
+      [
+        { units: 1, status: 'attended' },
+        { units: 2, status: 'bunked' },
+        { units: 1, status: 'cancelled' },
+        { units: 1, status: 'excused', excusedKind: 'on_duty' },
+      ],
+      p,
+    );
     expect(out).toEqual([
       { attended: 1, held: 1 },
       { attended: 1, held: 3 },
@@ -147,9 +144,11 @@ describe('§6.8 simulate', () => {
   });
 
   it('FR-ATT-010: excused excluded mapping contributes nothing', () => {
-    const out = simulate(t(1, 1), [
-      { units: 1, status: 'excused', excusedKind: 'medical' },
-    ], exact());
+    const out = simulate(
+      t(1, 1),
+      [{ units: 1, status: 'excused', excusedKind: 'medical' }],
+      exact(),
+    );
     expect(out).toEqual([{ attended: 1, held: 1 }]);
   });
 });
@@ -157,8 +156,9 @@ describe('§6.8 simulate', () => {
 describe('§2 excused mappings', () => {
   it('FR-ATT-009: policy.excused null → excused marks count as excluded (0,0)', () => {
     const p = { ...exact(), excused: null };
-    expect(tally(baseline(0, 0), [mark({ status: 'excused', excusedKind: 'on_duty' })], p))
-      .toEqual({ attended: 0, held: 0 });
+    expect(tally(baseline(0, 0), [mark({ status: 'excused', excusedKind: 'on_duty' })], p)).toEqual(
+      { attended: 0, held: 0 },
+    );
   });
 
   it('FR-ATT-009: excused → absent counts (0,u); missing kind defaults to other', () => {
@@ -196,14 +196,22 @@ describe('§2 excused mappings', () => {
 describe('§10 local-date validation', () => {
   it('FR-ATT-009: 2024-02-29 and 2000-02-29 are real dates and accepted', () => {
     for (const d of ['2024-02-29', '2000-02-29']) {
-      expect(
-        tally(baseline(0, 0), [mark({ status: 'attended', localDate: d })], exact()),
-      ).toEqual({ attended: 1, held: 1 });
+      expect(tally(baseline(0, 0), [mark({ status: 'attended', localDate: d })], exact())).toEqual({
+        attended: 1,
+        held: 1,
+      });
     }
   });
 
   it('FR-ATT-009: fake calendar dates throw', () => {
-    for (const d of ['2026-02-29', '1900-02-29', '2026-00-15', '2026-01-00', '2026-04-31', '2026-1-5']) {
+    for (const d of [
+      '2026-02-29',
+      '1900-02-29',
+      '2026-00-15',
+      '2026-01-00',
+      '2026-04-31',
+      '2026-1-5',
+    ]) {
       expect(() =>
         tally(baseline(0, 0), [mark({ status: 'attended', localDate: d })], exact()),
       ).toThrowError(/^attendance:/);
@@ -255,31 +263,36 @@ describe('review fixes — policy-aware forecasts and input cap', () => {
     });
   });
 
-  it('R3 / FR-ATT-001: held 1,000,001 throws; near-cap half_up recovery finishes fast via bigint search', { timeout: 5000 }, () => {
-    const p = halfUp(9999);
-    expect(() => isEligible(t(0, 1_000_001), p)).toThrowError(/^attendance:/);
-    expect(() => safeNowBudget(t(5, 5), h([1_000_001], true), p)).toThrowError(/^attendance:/);
-    expect(() => safeNowBudget(t(5, 5), h([999_999, 2], true), p)).toThrowError(/^attendance:/);
+  it(
+    'R3 / FR-ATT-001: held 1,000,001 throws; near-cap half_up recovery finishes fast via bigint search',
+    { timeout: 5000 },
+    () => {
+      const p = halfUp(9999);
+      expect(() => isEligible(t(0, 1_000_001), p)).toThrowError(/^attendance:/);
+      expect(() => safeNowBudget(t(5, 5), h([1_000_001], true), p)).toThrowError(/^attendance:/);
+      expect(() => safeNowBudget(t(5, 5), h([999_999, 2], true), p)).toThrowError(/^attendance:/);
 
-    const rec = recovery(t(0, 1_000_000), h([], false), p);
-    // Independent check: smallest k with 100·floor((200k + H)/(2H)) ≥ T.
-    const H = 1_000_000n;
-    let expected = 0n;
-    for (let k = 1n; ; k *= 2n) {
-      if ((200n * k + (H + k)) / (2n * (H + k)) * 100n >= 9999n) {
-        let lo = k / 2n;
-        let hi = k;
-        while (hi - lo > 1n) {
-          const mid = lo + (hi - lo) / 2n;
-          const ok = (200n * mid + (H + mid)) / (2n * (H + mid)) * 100n >= 9999n;
-          if (ok) hi = mid; else lo = mid;
+      const rec = recovery(t(0, 1_000_000), h([], false), p);
+      // Independent check: smallest k with 100·floor((200k + H)/(2H)) ≥ T.
+      const H = 1_000_000n;
+      let expected = 0n;
+      for (let k = 1n; ; k *= 2n) {
+        if (((200n * k + (H + k)) / (2n * (H + k))) * 100n >= 9999n) {
+          let lo = k / 2n;
+          let hi = k;
+          while (hi - lo > 1n) {
+            const mid = lo + (hi - lo) / 2n;
+            const ok = ((200n * mid + (H + mid)) / (2n * (H + mid))) * 100n >= 9999n;
+            if (ok) hi = mid;
+            else lo = mid;
+          }
+          expected = hi;
+          break;
         }
-        expected = hi;
-        break;
       }
-    }
-    expect(rec).toEqual({ kind: 'recoverable', n: Number(expected) });
-  });
+      expect(rec).toEqual({ kind: 'recoverable', n: Number(expected) });
+    },
+  );
 });
 
 describe('validate helpers', () => {
@@ -311,15 +324,11 @@ describe('§10 input validation — budgets, accumulation caps, policy fields', 
   it('FR-ATT-001: accumulated attended/held above 1,000,000 throws (tally and simulate)', () => {
     const p = exact();
     expect(() =>
-      tally(
-        baseline(999_999, 999_999),
-        [mark({ status: 'attended', units: 2 })],
-        p,
-      ),
+      tally(baseline(999_999, 999_999), [mark({ status: 'attended', units: 2 })], p),
     ).toThrowError(/^attendance:/);
-    expect(() =>
-      simulate(t(999_999, 999_999), [{ units: 2, status: 'attended' }], p),
-    ).toThrowError(/^attendance:/);
+    expect(() => simulate(t(999_999, 999_999), [{ units: 2, status: 'attended' }], p)).toThrowError(
+      /^attendance:/,
+    );
   });
 
   it('FR-ATT-001: assertPolicy rejects bad rounding, basis and excused maps', () => {
@@ -327,7 +336,10 @@ describe('§10 input validation — budgets, accumulation caps, policy fields', 
     const bads: AttendancePolicy[] = [
       { ...good, rounding: 'bankers' as AttendancePolicy['rounding'] },
       { ...good, basis: 'weekly' as AttendancePolicy['basis'] },
-      { ...good, excused: { on_duty: 'present', medical: 'excluded' } as AttendancePolicy['excused'] },
+      {
+        ...good,
+        excused: { on_duty: 'present', medical: 'excluded' } as AttendancePolicy['excused'],
+      },
       { ...good, excused: { on_duty: 'present', medical: 'half' as never, other: 'absent' } },
     ];
     for (const bad of bads) {

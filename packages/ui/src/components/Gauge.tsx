@@ -34,7 +34,8 @@ export function Gauge({
   return (
     <View
       accessibilityLabel={accessibilityLabel}
-      style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}
+    >
       <Svg
         width={size + pad * 2}
         height={size + pad * 2}
@@ -46,8 +47,16 @@ export function Gauge({
               accessible: false,
               accessibilityElementsHidden: true,
               importantForAccessibility: 'no-hide-descendants' as const,
-            })}>
-        <Circle cx={center} cy={center} r={r} stroke={theme.fill.control} strokeWidth={stroke} fill="none" />
+            })}
+      >
+        <Circle
+          cx={center}
+          cy={center}
+          r={r}
+          stroke={theme.fill.control}
+          strokeWidth={stroke}
+          fill="none"
+        />
         <AnimatedCircle
           cx={center}
           cy={center}

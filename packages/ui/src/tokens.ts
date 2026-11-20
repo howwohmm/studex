@@ -39,7 +39,13 @@ export type ThemeColors = (typeof colors)[keyof typeof colors];
 export type ColorScheme = keyof typeof colors;
 
 export const typeScale = {
-  hero: { fontSize: 88, lineHeight: 88, fontWeight: '700' as const, letterSpacing: -2, fontVariant: ['tabular-nums' as 'tabular-nums'] },
+  hero: {
+    fontSize: 88,
+    lineHeight: 88,
+    fontWeight: '700' as const,
+    letterSpacing: -2,
+    fontVariant: ['tabular-nums' as const],
+  },
   largeTitle: { fontSize: 34, lineHeight: 41, fontWeight: '700' as const },
   title1: { fontSize: 28, lineHeight: 34, fontWeight: '700' as const },
   title2: { fontSize: 22, lineHeight: 28, fontWeight: '700' as const },
@@ -55,12 +61,27 @@ export const typeScale = {
 
 export type TextVariant = keyof typeof typeScale;
 
-export const spacing = { 4: 4, 8: 8, 12: 12, 16: 16, 20: 20, 24: 24, 32: 32, 40: 40, 56: 56 } as const;
+export const spacing = {
+  4: 4,
+  8: 8,
+  12: 12,
+  16: 16,
+  20: 20,
+  24: 24,
+  32: 32,
+  40: 40,
+  56: 56,
+} as const;
 
 export const radii = { sm: 10, md: 14, lg: 20, xl: 28, pill: 999 } as const;
 
 export const shadow = {
-  ios: { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 24, shadowOffset: { width: 0, height: 8 } },
+  ios: {
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 8 },
+  },
   android: { elevation: 6 },
 } as const;
 

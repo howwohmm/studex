@@ -14,7 +14,11 @@ export interface TextProps extends RNTextProps {
 export function Text({ variant = 'body', color = 'primary', tabular, style, ...rest }: TextProps) {
   const theme = useTheme();
   const resolved =
-    color === 'accent' ? theme.accent : color in theme.label ? theme.label[color as LabelRole] : color;
+    color === 'accent'
+      ? theme.accent
+      : color in theme.label
+        ? theme.label[color as LabelRole]
+        : color;
   const fontStyle = {
     ...typeScale[variant],
     color: resolved,

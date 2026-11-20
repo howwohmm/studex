@@ -47,9 +47,7 @@ describe('§11.3 exhaustive boundary sweep (closed form == brute force)', () => 
     for (let H = 1; H <= 300; H += 1) {
       for (let A = 0; A <= H; A += 1) {
         const tl = { attended: A, held: H };
-        expect(safeNowBudget(tl, horizon, p), `safeNow A=${A} H=${H}`).toBe(
-          bruteSafeNow(A, H, T),
-        );
+        expect(safeNowBudget(tl, horizon, p), `safeNow A=${A} H=${H}`).toBe(bruteSafeNow(A, H, T));
         const expected = bruteRecovery(A, H, T);
         const actual = recovery(tl, horizon, p);
         if (expected === 'unreachable') {

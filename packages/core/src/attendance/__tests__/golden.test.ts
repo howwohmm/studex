@@ -31,10 +31,7 @@ const halfUp = (thresholdBp = 7500): AttendancePolicy => ({
   rounding: 'half_up_integer',
 });
 
-export function upcomingOf(
-  R: number,
-  units: number | readonly number[] = 1,
-): UpcomingOccurrence[] {
+export function upcomingOf(R: number, units: number | readonly number[] = 1): UpcomingOccurrence[] {
   return Array.from({ length: R }, (_, i) => ({
     occurrenceKey: `o${i}`,
     startsAt: new Date(Date.UTC(2026, 10, 21) + i * 86_400_000).toISOString(),
@@ -288,14 +285,8 @@ describe('golden table §8', () => {
   it('G15 / FR-ATT-003: cancelled and unmarked occurrences never change the tally', () => {
     const p = exact();
     const base = [mark('attended'), mark('bunked')];
-    const withNoise = [
-      mark('cancelled', '2026-11-02'),
-      ...base,
-      mark('cancelled', '2026-11-03'),
-    ];
-    expect(tally(baseline(0, 0), withNoise, p)).toEqual(
-      tally(baseline(0, 0), base, p),
-    );
+    const withNoise = [mark('cancelled', '2026-11-02'), ...base, mark('cancelled', '2026-11-03')];
+    expect(tally(baseline(0, 0), withNoise, p)).toEqual(tally(baseline(0, 0), base, p));
   });
 
   it('G16 / FR-ATT-003: contact hour — unmarked contributes (0,0), attended contributes (1,1)', () => {
@@ -309,11 +300,7 @@ describe('golden table §8', () => {
 
   it('G17a / FR-ATT-002: baseline 30/40 asOf 2026-11-19 swallows a same-day Bunked mark → 30/40', () => {
     const p = exact();
-    const tl = tally(
-      baseline(30, 40, '2026-11-19'),
-      [mark('bunked', '2026-11-19')],
-      p,
-    );
+    const tl = tally(baseline(30, 40, '2026-11-19'), [mark('bunked', '2026-11-19')], p);
     expect(tl).toEqual({ attended: 30, held: 40 });
     expect(displayPercent(tl, p, 0)).toBe('75');
     expect(isEligible(tl, p)).toBe(true);
@@ -321,11 +308,7 @@ describe('golden table §8', () => {
 
   it('G17b / FR-ATT-002: baseline 30/40 asOf 2026-11-19 + Bunked on 2026-11-20 → 30/41, n=3', () => {
     const p = exact();
-    const tl = tally(
-      baseline(30, 40, '2026-11-19'),
-      [mark('bunked', '2026-11-20')],
-      p,
-    );
+    const tl = tally(baseline(30, 40, '2026-11-19'), [mark('bunked', '2026-11-20')], p);
     expect(tl).toEqual({ attended: 30, held: 41 });
     expect(displayPercent(tl, p, 0)).toBe('73');
     expect(isEligible(tl, p)).toBe(false);
@@ -390,7 +373,7 @@ describe('§10 validation', () => {
     () => tally(baseline(0, 0), [mark('attended', '2026-02-30')], p),
     () => tally(baseline(0, 0, '2026-13-01'), [], p),
     () => safeNowBudget(t(3, 4), horizon(upcomingOf(1, 0)), p),
-  ])('invalid input throws RangeError with attendance: prefix', fn => {
+  ])('invalid input throws RangeError with attendance: prefix', (fn) => {
     expect(fn).toThrowError(RangeError);
     expect(fn).toThrowError(/^attendance:/);
   });

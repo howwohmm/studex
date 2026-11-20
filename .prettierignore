@@ -1,0 +1,9 @@
+node_modules
+pnpm-lock.yaml
+**/dist
+**/build
+**/coverage
+**/.expo
+**/*.html
+extraction-lab
+apps/app/assets/expo.icon

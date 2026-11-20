@@ -11,14 +11,14 @@ working from the [master spec](docs/spec/README.md); every change is reviewed ag
 
 ## Repository
 
-| Path | What |
-|---|---|
-| `apps/app` | Expo Router universal app (iOS, Android, Web) |
-| `packages/` | Shared TypeScript packages (`packages/core`: attendance engine and domain logic) |
-| `extraction-lab/` | Timetable extraction benchmarks and findings (fixtures are private) |
-| `docs/spec/` | Product and engineering specification — the source of truth |
-| `docs/status/` | Repository audit, progress logs, open questions |
-| `docs/pitch/` | Pitch deck, business documents, grant applications |
+| Path              | What                                                                             |
+| ----------------- | -------------------------------------------------------------------------------- |
+| `apps/app`        | Expo Router universal app (iOS, Android, Web)                                    |
+| `packages/`       | Shared TypeScript packages (`packages/core`: attendance engine and domain logic) |
+| `extraction-lab/` | Timetable extraction benchmarks and findings (fixtures are private)              |
+| `docs/spec/`      | Product and engineering specification — the source of truth                      |
+| `docs/status/`    | Repository audit, progress logs, open questions                                  |
+| `docs/pitch/`     | Pitch deck, business documents, grant applications                               |
 
 ## Run it
 

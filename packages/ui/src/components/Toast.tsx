@@ -64,15 +64,25 @@ export function Toast({
         ? {}
         : {
             accessibilityElementsHidden: !visible,
-            importantForAccessibility: (visible ? 'auto' : 'no-hide-descendants') as 'auto' | 'no-hide-descendants',
+            importantForAccessibility: (visible ? 'auto' : 'no-hide-descendants') as
+              'auto' | 'no-hide-descendants',
           })}
       style={[
         { position: 'absolute', left: 16, right: 16, bottom: 24, alignItems: 'center' },
         wrap,
       ]}
-      pointerEvents={visible ? 'auto' : 'none'}>
+      pointerEvents={visible ? 'auto' : 'none'}
+    >
       <GlassSurface radius={14}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 12 }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            gap: 12,
+          }}
+        >
           <Text variant="callout">{message}</Text>
           {action && onAction ? (
             <Pressable
@@ -81,7 +91,13 @@ export function Toast({
                 haptic('undo');
                 onAction();
               }}
-              style={{ paddingVertical: 12, paddingHorizontal: 12, minHeight: 44, justifyContent: 'center' }}>
+              style={{
+                paddingVertical: 12,
+                paddingHorizontal: 12,
+                minHeight: 44,
+                justifyContent: 'center',
+              }}
+            >
               <Text variant="callout" color="accent" style={{ fontWeight: '600' }}>
                 {action}
               </Text>

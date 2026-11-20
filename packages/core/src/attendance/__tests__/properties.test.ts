@@ -9,13 +9,7 @@ import {
   tally,
   termEndForecast,
 } from '../index';
-import type {
-  AttendancePolicy,
-  Baseline,
-  Horizon,
-  Mark,
-  Tally,
-} from '../index';
+import type { AttendancePolicy, Baseline, Horizon, Mark, Tally } from '../index';
 
 const RUNS = { numRuns: 10_000 };
 
@@ -57,8 +51,7 @@ const bunkedMark = (units = 1): Mark => ({
 
 const attendedMark = (units = 1): Mark => ({ ...bunkedMark(units), status: 'attended' });
 
-const eligibleExact = (A: number, H: number, T: number): boolean =>
-  10_000 * A >= T * H;
+const eligibleExact = (A: number, H: number, T: number): boolean => 10_000 * A >= T * H;
 
 describe('properties §11.2', () => {
   it('P(a) / FR-ATT-005: safe-now closed form equals simulation when u=1 and exact', () => {
@@ -319,10 +312,7 @@ describe('policy-aware term-end forecast properties', () => {
           // Feasibility: skipping exactly maxSkippable occurrences stays eligible.
           expect(f!.maxSkippable).toBeLessThanOrEqual(f!.remaining);
           expect(
-            isEligible(
-              { attended: attendAll.attended - skippedSum, held: attendAll.held },
-              p,
-            ),
+            isEligible({ attended: attendAll.attended - skippedSum, held: attendAll.held }, p),
           ).toBe(true);
         }
       }),

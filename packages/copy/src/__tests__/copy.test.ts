@@ -10,19 +10,15 @@ const LOCKED: Record<string, string> = {
   'capture.button.scan': 'Scan timetable',
   'capture.button.photos': 'Choose from Photos',
   'capture.button.pdf': 'Pick a PDF',
-  'capture.caption':
-    'Crumpled paper, PDF, screenshot from the class group — all fine.',
+  'capture.caption': 'Crumpled paper, PDF, screenshot from the class group — all fine.',
   'capture.manual.link': 'No timetable handy? Type it in',
   'permission.camera':
     'StudEx uses the camera to scan your timetable and to add photos to your subject folders. Everything stays on this device.',
   'today.title': 'Today',
   'today.card.caption': 'Overall',
-  'today.verdict.above':
-    "You're at {percent}%. You can bunk {n} more and stay above {threshold}%.",
-  'today.verdict.close':
-    "You're at {percent}%. One bunk puts you under {threshold}%.",
-  'today.verdict.below':
-    "You're at {percent}%. Attend the next {n} to reach {threshold}%.",
+  'today.verdict.above': "You're at {percent}%. You can bunk {n} more and stay above {threshold}%.",
+  'today.verdict.close': "You're at {percent}%. One bunk puts you under {threshold}%.",
+  'today.verdict.below': "You're at {percent}%. Attend the next {n} to reach {threshold}%.",
   'today.section.upcoming': 'Coming up',
   'today.section.earlier': 'Earlier',
   'today.badge.now': 'NOW',
@@ -102,8 +98,17 @@ describe('t()', () => {
     for (const key of Object.keys(catalog) as CopyKey[]) {
       const entry = catalog[key];
       const params: Record<string, string | number> = {
-        percent: '75', n: 2, threshold: '75', subject: 'DBMS',
-        attended: 10, held: 12, i: 1, k: 2, state: 'Bunked', filename: 'x', max: '80',
+        percent: '75',
+        n: 2,
+        threshold: '75',
+        subject: 'DBMS',
+        attended: 10,
+        held: 12,
+        i: 1,
+        k: 2,
+        state: 'Bunked',
+        filename: 'x',
+        max: '80',
       };
       expect(() => t(key, params)).not.toThrow();
       expect(typeof t(key, params)).toBe('string');

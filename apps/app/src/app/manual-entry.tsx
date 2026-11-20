@@ -10,7 +10,8 @@ export default function ManualEntryScreen() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.bg.grouped }}
-      contentContainerStyle={{ paddingTop: insets.top, paddingBottom: insets.bottom + spacing[24] }}>
+      contentContainerStyle={{ paddingTop: insets.top, paddingBottom: insets.bottom + spacing[24] }}
+    >
       <EmptyState
         icon="scan"
         message={t('manual.placeholder')}

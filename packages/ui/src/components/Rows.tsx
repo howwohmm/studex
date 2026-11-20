@@ -33,7 +33,8 @@ export function ListRow({
           backgroundColor: theme.bg.surface,
         },
         style,
-      ]}>
+      ]}
+    >
       {leading}
       <View style={{ flex: 1, gap: 2 }}>
         <Text variant="headline">{title}</Text>
@@ -51,7 +52,8 @@ export function ListRow({
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => (pressed ? { backgroundColor: theme.fill.control } : undefined)}>
+      style={({ pressed }) => (pressed ? { backgroundColor: theme.fill.control } : undefined)}
+    >
       {inner}
     </Pressable>
   );
@@ -68,7 +70,8 @@ export function Chip({ label, color }: { label: string; color?: string }) {
         backgroundColor: theme.fill.control,
         paddingHorizontal: 8,
         paddingVertical: 3,
-      }}>
+      }}
+    >
       <Text variant="caption1" style={{ color: c }} tabular>
         {label}
       </Text>
@@ -87,7 +90,8 @@ export function Badge({ label, color }: { label: string; color?: string }) {
         backgroundColor: theme.accentSoft,
         paddingHorizontal: 8,
         paddingVertical: 2,
-      }}>
+      }}
+    >
       <Text variant="caption2" style={{ color: c, textTransform: 'uppercase' }}>
         {label}
       </Text>

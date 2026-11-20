@@ -2,7 +2,7 @@ import { ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@studex/copy';
-import { useTheme, EmptyState, Button, spacing } from '@studex/ui';
+import { useTheme, EmptyState, spacing } from '@studex/ui';
 
 export default function CaptureScreen() {
   const theme = useTheme();
@@ -10,7 +10,8 @@ export default function CaptureScreen() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.bg.grouped }}
-      contentContainerStyle={{ paddingTop: insets.top, paddingBottom: insets.bottom + spacing[24] }}>
+      contentContainerStyle={{ paddingTop: insets.top, paddingBottom: insets.bottom + spacing[24] }}
+    >
       <EmptyState
         icon="scan"
         message={t('capture.placeholder')}

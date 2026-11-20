@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { PixelRatio, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -11,7 +11,17 @@ import { Text } from './Text';
 import type { TextVariant } from '../tokens';
 import { typeScale } from '../tokens';
 
-function Digit({ digit, size, variant, color }: { digit: string; size: number; variant: TextVariant; color?: string | undefined }) {
+function Digit({
+  digit,
+  size,
+  variant,
+  color,
+}: {
+  digit: string;
+  size: number;
+  variant: TextVariant;
+  color?: string | undefined;
+}) {
   const y = useSharedValue(Number(digit));
   const reduce = useReducedMotion();
   useEffect(() => {
@@ -49,7 +59,8 @@ export function NumberTicker({
   return (
     <View
       accessibilityLabel={value}
-      style={{ flexDirection: 'row', height: h, alignItems: 'center' }}>
+      style={{ flexDirection: 'row', height: h, alignItems: 'center' }}
+    >
       {value.split('').map((ch, i) =>
         /\d/.test(ch) ? (
           <Digit key={i} digit={ch} size={digitW} variant={variant} color={color} />
