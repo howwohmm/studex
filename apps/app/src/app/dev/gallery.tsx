@@ -1,4 +1,4 @@
-import { ScrollView, View, useColorScheme } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import Head from 'expo-router/head';
 
 import { useSettled } from '@/lib/settled';
@@ -142,9 +142,8 @@ function Gallery({ scheme }: { scheme: 'light' | 'dark' }) {
 }
 
 export default function GalleryScreen() {
-  const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
-  const resolvedScheme = useScheme();
-  const { settledProps } = useSettled(true, [resolvedScheme]);
+  const scheme = useScheme();
+  const { settledProps } = useSettled(true, [scheme]);
   return (
     <>
       <Head>
