@@ -79,15 +79,23 @@ export function Chip({ label, color }: { label: string; color?: string }) {
   );
 }
 
-export function Badge({ label, color }: { label: string; color?: string }) {
+export function Badge({
+  label,
+  color,
+  background,
+}: {
+  label: string;
+  color?: string;
+  background?: string;
+}) {
   const theme = useTheme();
-  const c = color ?? theme.accent;
+  const c = color ?? theme.accentText;
   return (
     <View
       style={{
         borderRadius: radii.pill,
         borderCurve: 'continuous' as never,
-        backgroundColor: theme.accentSoft,
+        backgroundColor: background ?? theme.accentSoft,
         paddingHorizontal: 8,
         paddingVertical: 2,
       }}

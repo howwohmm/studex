@@ -1,12 +1,13 @@
 import { useEffect } from 'react';
 import Animated, {
+  cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
-  useReducedMotion,
   Easing,
 } from 'react-native-reanimated';
+import { useReducedMotion } from '../reduced-motion';
 import { useTheme } from '../theme';
 import { radii } from '../tokens';
 
@@ -23,12 +24,17 @@ export function Skeleton({
   const opacity = useSharedValue(0.5);
   const reduce = useReducedMotion();
   useEffect(() => {
-    if (reduce) return;
+    if (reduce) {
+      cancelAnimation(opacity);
+      opacity.value = 0.5;
+      return;
+    }
     opacity.value = withRepeat(
       withTiming(1, { duration: 800, easing: Easing.inOut(Easing.quad) }),
       -1,
       true,
     );
+    return () => cancelAnimation(opacity);
   }, [opacity, reduce]);
   const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
   return (

@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import * as SplashScreen from 'expo-splash-screen';
 import { useState } from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
+import { Dimensions, Platform, StyleSheet, View } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
@@ -12,7 +12,9 @@ export function AnimatedSplashOverlay() {
   const [animate, setAnimate] = useState(false);
   const [visible, setVisible] = useState(true);
 
-  if (!visible) return null;
+  // Web exports don't SSR this overlay — rendering it on the first client paint
+  // would be a hydration mismatch (and splash is a native concept anyway).
+  if (Platform.OS === 'web' || !visible) return null;
 
   const splashKeyframe = new Keyframe({
     0: {

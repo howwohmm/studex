@@ -1,6 +1,8 @@
 import { Stack, Redirect } from 'expo-router';
 
+import { QA_ENABLED } from '@/lib/qa';
+
 export default function DevLayout() {
-  if (!__DEV__) return <Redirect href="/" />;
+  if (!QA_ENABLED) return <Redirect href="/" />;
   return <Stack screenOptions={{ headerShown: false }} />;
 }

@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { ScrollView, View, Pressable } from 'react-native';
+import { Platform, ScrollView, View, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  useReducedMotion,
   Easing,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLocalSearchParams } from 'expo-router';
+import Head from 'expo-router/head';
+
+import { useSettled } from '@/lib/settled';
 import { t } from '@studex/copy';
 import {
   tally,
@@ -24,6 +27,8 @@ import {
 } from '@studex/core';
 import {
   useTheme,
+  useScheme,
+  useReducedMotion,
   Text,
   Card,
   Badge,
@@ -157,7 +162,26 @@ export default function TodayDemo() {
   const reduce = useReducedMotion();
   const insets = useSafeAreaInsets();
   const [slots, dispatch] = useReducer(reducer, INITIAL);
-  const [clockIdx, setClockIdx] = useState(1);
+  const { clock: clockParam } = useLocalSearchParams<{ clock?: string }>();
+  // Native deep links can seed the clock on first render; web must render the
+  // static default (midday) and read ?clock= after mount to stay hydration-safe.
+  const [clockIdx, setClockIdx] = useState(() => {
+    if (Platform.OS === 'web') return 1;
+    const idx = ['morning', 'midday', 'evening'].indexOf(clockParam ?? '');
+    return idx >= 0 ? idx : 1;
+  });
+  const [clockReady, setClockReady] = useState(Platform.OS !== 'web');
+  useEffect(() => {
+    const raw =
+      Platform.OS === 'web' ? new URLSearchParams(location.search).get('clock') : clockParam;
+    const idx = ['morning', 'midday', 'evening'].indexOf(raw ?? '');
+    // Microtask: applies before the data-settled timer (macrotask). A missing
+    // or invalid clock resets to midday.
+    void Promise.resolve().then(() => {
+      setClockIdx(idx >= 0 ? idx : 1);
+      setClockReady(true);
+    });
+  }, [clockParam]);
   const clock = CLOCKS[clockIdx]!;
   const [undoVisible, setUndoVisible] = useState(false);
   const [backAbove, setBackAbove] = useState(false);
@@ -225,6 +249,9 @@ export default function TodayDemo() {
     return () => clearInterval(id);
   }, [pctNum, pctShared, reduce]);
 
+  const scheme = useScheme();
+  const { settledProps } = useSettled(clockReady && (reduce || counted === pctNum), [scheme]);
+
   useEffect(() => {
     if (!wasEligible.current && eligible) {
       haptic('backAbove');
@@ -250,156 +277,161 @@ export default function TodayDemo() {
   }).format(new Date(`${TODAY}T00:00:00`));
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.bg.grouped }}>
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{
-          paddingTop: insets.top + spacing[8],
-          paddingHorizontal: spacing[20],
-          paddingBottom: insets.bottom + spacing[40],
-          gap: spacing[20],
-        }}
-      >
-        {/* header */}
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-          <View style={{ flex: 1, gap: 4 }}>
-            <Text variant="largeTitle">{t('today.title')}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[8] }}>
-              <Text variant="subhead" color="secondary">
-                {dateLabel}
-              </Text>
-              <Badge label={t('demo.badge')} color={theme.label.secondary} />
+    <>
+      <Head>
+        <title>{'Today demo — Studex'}</title>
+      </Head>
+      <View {...settledProps} style={{ flex: 1, backgroundColor: theme.bg.grouped }}>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{
+            paddingTop: insets.top + spacing[8],
+            paddingHorizontal: spacing[20],
+            paddingBottom: insets.bottom + spacing[40],
+            gap: spacing[20],
+          }}
+        >
+          {/* header */}
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+            <View style={{ flex: 1, gap: 4 }}>
+              <Text variant="largeTitle">{t('today.title')}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[8] }}>
+                <Text variant="subhead" color="secondary">
+                  {dateLabel}
+                </Text>
+                <Badge label={t('demo.badge')} color={theme.label.primary} />
+              </View>
             </View>
+            <IconButton onPress={() => {}} size={32} accessibilityLabel={t('a11y.profile')}>
+              <Icon name="person" size={20} color="secondary" />
+            </IconButton>
           </View>
-          <IconButton onPress={() => {}} size={32} accessibilityLabel={t('a11y.profile')}>
-            <Icon name="person" size={20} color="secondary" />
-          </IconButton>
-        </View>
 
-        {/* hero card */}
-        <Card style={{ alignItems: 'center', gap: spacing[16], paddingVertical: spacing[24] }}>
-          <Gauge progress={pctShared} threshold={THRESHOLD} size={220} stroke={16}>
-            <View style={{ alignItems: 'center' }}>
-              <Text
+          {/* hero card */}
+          <Card style={{ alignItems: 'center', gap: spacing[16], paddingVertical: spacing[24] }}>
+            <Gauge progress={pctShared} threshold={THRESHOLD} size={220} stroke={16}>
+              <View style={{ alignItems: 'center' }}>
+                <Text
+                  style={{
+                    fontSize: 68,
+                    lineHeight: 72,
+                    fontWeight: '700',
+                    letterSpacing: -1.5,
+                    fontVariant: ['tabular-nums'],
+                    color: theme.label.primary,
+                  }}
+                >
+                  {reduce ? pctNum : counted}
+                  <Text style={{ fontSize: 31, fontWeight: '700', color: theme.label.secondary }}>
+                    %
+                  </Text>
+                </Text>
+                <Text variant="footnote" color="secondary">
+                  {t('today.card.caption')}
+                </Text>
+              </View>
+            </Gauge>
+            {sentence ? (
+              <View
                 style={{
-                  fontSize: 68,
-                  lineHeight: 72,
-                  fontWeight: '700',
-                  letterSpacing: -1.5,
-                  fontVariant: ['tabular-nums'],
-                  color: theme.label.primary,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: spacing[8],
+                  paddingHorizontal: spacing[8],
                 }}
               >
-                {reduce ? pctNum : counted}
-                <Text style={{ fontSize: 31, fontWeight: '700', color: theme.label.secondary }}>
-                  %
+                <Dot color={bandColor} size={8} />
+                <Text variant="title3" style={{ fontWeight: '500', textAlign: 'center' }}>
+                  {sentence}
                 </Text>
-              </Text>
-              <Text variant="footnote" color="secondary">
-                {t('today.card.caption')}
-              </Text>
-            </View>
-          </Gauge>
-          {sentence ? (
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: spacing[8],
-                paddingHorizontal: spacing[8],
-              }}
-            >
-              <Dot color={bandColor} size={8} />
-              <Text variant="title3" style={{ fontWeight: '500', textAlign: 'center' }}>
-                {sentence}
-              </Text>
-            </View>
-          ) : null}
-        </Card>
-
-        {/* sections */}
-        {now.length > 0 ? (
-          <Section title={t('today.section.now')}>
-            {now.map((s) => (
-              <ClassRow
-                key={s.id}
-                slot={s}
-                clock={clock}
-                isNow
-                onMark={mark}
-                onReopen={(sl) => dispatch({ type: 'reopen', id: sl.id })}
-              />
-            ))}
-          </Section>
-        ) : null}
-        {upcoming.length > 0 ? (
-          <Section title={t('today.section.upcoming')}>
-            {upcoming.map((s, i) => (
-              <ClassRow
-                key={s.id}
-                slot={s}
-                clock={clock}
-                menuUp={i === upcoming.length - 1}
-                onMark={mark}
-                onReopen={(sl) => dispatch({ type: 'reopen', id: sl.id })}
-              />
-            ))}
-          </Section>
-        ) : null}
-        {earlier.length > 0 ? (
-          <Section title={t('today.section.earlier')}>
-            {earlier.map((s) => (
-              <ClassRow
-                key={s.id}
-                slot={s}
-                clock={clock}
-                past
-                onMark={mark}
-                onReopen={(sl) => dispatch({ type: 'reopen', id: sl.id })}
-              />
-            ))}
-          </Section>
-        ) : null}
-
-        {/* end-of-day sweep */}
-        {clockIdx === 2 && remaining > 0 ? (
-          <Card style={{ gap: spacing[12] }}>
-            <Button
-              title={t('today.sweep', { n: remaining })}
-              onPress={() => {
-                haptic('endOfDaySweep');
-                dispatch({ type: 'sweep', clock, batch: ++batchRef.current });
-                setUndoVisible(true);
-              }}
-            />
+              </View>
+            ) : null}
           </Card>
-        ) : null}
 
-        {/* dev-only clock control */}
-        <SegmentedControl
-          options={[t('demo.clock.morning'), t('demo.clock.midday'), t('demo.clock.evening')]}
-          selected={clockIdx}
-          onChange={setClockIdx}
-        />
+          {/* sections */}
+          {now.length > 0 ? (
+            <Section title={t('today.section.now')}>
+              {now.map((s) => (
+                <ClassRow
+                  key={s.id}
+                  slot={s}
+                  clock={clock}
+                  isNow
+                  onMark={mark}
+                  onReopen={(sl) => dispatch({ type: 'reopen', id: sl.id })}
+                />
+              ))}
+            </Section>
+          ) : null}
+          {upcoming.length > 0 ? (
+            <Section title={t('today.section.upcoming')}>
+              {upcoming.map((s, i) => (
+                <ClassRow
+                  key={s.id}
+                  slot={s}
+                  clock={clock}
+                  menuUp={i === upcoming.length - 1}
+                  onMark={mark}
+                  onReopen={(sl) => dispatch({ type: 'reopen', id: sl.id })}
+                />
+              ))}
+            </Section>
+          ) : null}
+          {earlier.length > 0 ? (
+            <Section title={t('today.section.earlier')}>
+              {earlier.map((s) => (
+                <ClassRow
+                  key={s.id}
+                  slot={s}
+                  clock={clock}
+                  past
+                  onMark={mark}
+                  onReopen={(sl) => dispatch({ type: 'reopen', id: sl.id })}
+                />
+              ))}
+            </Section>
+          ) : null}
 
-        <Toast
-          visible={undoVisible}
-          message={t('toast.marked')}
-          action={t('common.undo')}
-          onAction={() => {
-            setUndoVisible(false);
-            dispatch({ type: 'undo', batch: batchRef.current });
-          }}
-          onHide={() => setUndoVisible(false)}
-        />
-        <Toast
-          visible={backAbove}
-          message={t('today.toast.recovered', { threshold: THRESHOLD })}
-          onHide={() => setBackAbove(false)}
-          durationMs={3000}
-        />
-      </ScrollView>
-    </View>
+          {/* end-of-day sweep */}
+          {clockIdx === 2 && remaining > 0 ? (
+            <Card style={{ gap: spacing[12] }}>
+              <Button
+                title={t('today.sweep', { n: remaining })}
+                onPress={() => {
+                  haptic('endOfDaySweep');
+                  dispatch({ type: 'sweep', clock, batch: ++batchRef.current });
+                  setUndoVisible(true);
+                }}
+              />
+            </Card>
+          ) : null}
+
+          {/* dev-only clock control */}
+          <SegmentedControl
+            options={[t('demo.clock.morning'), t('demo.clock.midday'), t('demo.clock.evening')]}
+            selected={clockIdx}
+            onChange={setClockIdx}
+          />
+
+          <Toast
+            visible={undoVisible}
+            message={t('toast.marked')}
+            action={t('common.undo')}
+            onAction={() => {
+              setUndoVisible(false);
+              dispatch({ type: 'undo', batch: batchRef.current });
+            }}
+            onHide={() => setUndoVisible(false)}
+          />
+          <Toast
+            visible={backAbove}
+            message={t('today.toast.recovered', { threshold: THRESHOLD })}
+            onHide={() => setBackAbove(false)}
+            durationMs={3000}
+          />
+        </ScrollView>
+      </View>
+    </>
   );
 }
 
@@ -532,7 +564,13 @@ function ClassRow({
       <View style={{ flex: 1, gap: 2 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[8] }}>
           <Text variant="headline">{slot.subject.name}</Text>
-          {isNow ? <Badge label={t('today.badge.now')} /> : null}
+          {isNow ? (
+            <Badge
+              label={t('today.badge.now')}
+              color={theme.label.primary}
+              background={theme.bg.surface}
+            />
+          ) : null}
         </View>
         <Text variant="subhead" color="secondary" numberOfLines={1}>
           {slot.subject.room} · {slot.subject.kind}

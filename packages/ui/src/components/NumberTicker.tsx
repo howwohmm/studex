@@ -4,9 +4,9 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-  useReducedMotion,
   Easing,
 } from 'react-native-reanimated';
+import { useReducedMotion } from '../reduced-motion';
 import { Text } from './Text';
 import type { TextVariant } from '../tokens';
 import { typeScale } from '../tokens';

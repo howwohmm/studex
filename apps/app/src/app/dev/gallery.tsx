@@ -1,4 +1,7 @@
-import { ScrollView, View, useColorScheme } from 'react-native';
+import { ScrollView, View } from 'react-native';
+import Head from 'expo-router/head';
+
+import { useSettled } from '@/lib/settled';
 import { useState } from 'react';
 import { useSharedValue } from 'react-native-reanimated';
 import {
@@ -21,6 +24,7 @@ import {
   Skeleton,
   GlassSurface,
   ThemeProvider,
+  useScheme,
   type TextVariant,
 } from '@studex/ui';
 
@@ -138,18 +142,24 @@ function Gallery({ scheme }: { scheme: 'light' | 'dark' }) {
 }
 
 export default function GalleryScreen() {
-  const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
+  const scheme = useScheme();
+  const { settledProps } = useSettled(true, [scheme]);
   return (
-    <ScrollView style={{ flex: 1 }}>
-      <Text variant="largeTitle" style={{ padding: 16 }}>
-        Gallery ({scheme})
-      </Text>
-      <ThemeProvider scheme={scheme}>
-        <Gallery scheme={scheme} />
-      </ThemeProvider>
-      <ThemeProvider scheme={scheme === 'dark' ? 'light' : 'dark'}>
-        <Gallery scheme={scheme === 'dark' ? 'light' : 'dark'} />
-      </ThemeProvider>
-    </ScrollView>
+    <>
+      <Head>
+        <title>{'Gallery — Studex'}</title>
+      </Head>
+      <ScrollView {...settledProps} style={{ flex: 1 }}>
+        <Text variant="largeTitle" style={{ padding: 16 }}>
+          Gallery ({scheme})
+        </Text>
+        <ThemeProvider scheme={scheme}>
+          <Gallery scheme={scheme} />
+        </ThemeProvider>
+        <ThemeProvider scheme={scheme === 'dark' ? 'light' : 'dark'}>
+          <Gallery scheme={scheme === 'dark' ? 'light' : 'dark'} />
+        </ThemeProvider>
+      </ScrollView>
+    </>
   );
 }

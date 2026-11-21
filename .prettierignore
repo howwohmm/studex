@@ -7,3 +7,6 @@ pnpm-lock.yaml
 **/*.html
 extraction-lab
 apps/app/assets/expo.icon
+test-results/
+report/
+screenshots/
