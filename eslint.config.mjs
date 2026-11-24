@@ -18,7 +18,7 @@ export default [
   // typescript-eslint recommended for pure-TypeScript packages.
   ...tseslint.configs.recommended.map((cfg) => ({
     ...cfg,
-    files: ['packages/**/*.{ts,tsx}'],
+    files: ['packages/**/*.{ts,tsx}', 'apps/api/**/*.{ts,tsx}'],
   })),
   {
     files: ['apps/app/**/*.{ts,tsx,js,jsx}'],
