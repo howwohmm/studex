@@ -1,0 +1,30 @@
+{
+  "name": "@studex/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@hono/node-server": "~1.19.19",
+    "@hono/zod-openapi": "~1.6.3",
+    "@studex/contracts": "workspace:*",
+    "@supabase/supabase-js": "~2.119.0",
+    "hono": "~4.13.19",
+    "jose": "~6.2.17",
+    "pino": "~10.4.0",
+    "tsx": "~4.23.15",
+    "zod": "~4.6.7"
+  },
+  "devDependencies": {
+    "@apidevtools/swagger-parser": "~13.1.0",
+    "@types/node": "~26.6.6",
+    "typescript": "~6.0.3",
+    "vitest": "5.1.0"
+  }
+}

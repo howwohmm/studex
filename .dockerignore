@@ -1,0 +1,8 @@
+.git
+**/node_modules
+**/.expo
+**/dist
+**/coverage
+apps/app/e2e
+docs
+extraction-lab

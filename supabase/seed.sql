@@ -11,9 +11,13 @@ insert into public.institutions (id, name, short_name, city, state, kind, verifi
 values
   ('119b0000-0000-7000-8000-000000000001', 'Ramaiah University of Applied Sciences', 'RUAS', 'Bengaluru', 'Karnataka', 'university', true);
 
-insert into public.profiles (user_id, display_name, institution_id, timezone, adult_confirmed)
-values
-  ('019b0000-0000-7000-8000-0000000000a1', 'Demo Student', '119b0000-0000-7000-8000-000000000001', 'Asia/Kolkata', true);
+-- on_auth_user_created already inserted the profile; enrich the demo row.
+update public.profiles
+set display_name = 'Demo Student',
+    institution_id = '119b0000-0000-7000-8000-000000000001',
+    timezone = 'Asia/Kolkata',
+    adult_confirmed = true
+where user_id = '019b0000-0000-7000-8000-0000000000a1';
 
 insert into public.terms (id, user_id, label, academic_year, start_date, end_date, schedule_mode, attendance_policy, institution_id)
 values

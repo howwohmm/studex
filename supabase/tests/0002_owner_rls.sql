@@ -83,7 +83,18 @@ values (gen_random_uuid(), '019b0000-0000-7000-8000-0000000000a1', '519b0000-000
 -- ---------------------------------------------------------------------------
 set local role authenticated;
 set local request.jwt.claims to '{"sub": "019b0000-0000-7000-8000-0000000000b2", "role": "authenticated"}';
-select is_empty(format('select 1 from public.%I', t), t || ': B sees 0 rows')
+-- B sees no rows they don't own (their own trigger-created profile is legitimately visible)
+select is_empty(
+  format(
+    'select 1 from public.%I%s',
+    t,
+    case
+      when t = 'profiles' then $$ where user_id <> '019b0000-0000-7000-8000-0000000000b2'$$
+      else ''
+    end
+  ),
+  t || ': B sees no other-user rows'
+)
 from unnest(pg_temp.user_tables()) t;
 
 -- ---------------------------------------------------------------------------
